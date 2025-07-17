@@ -88,13 +88,7 @@ M2_int_F2 <- bind_rows(
   filter(sc_int_type == "P")
 
 # Nettoyer l'environnement
-rm(list = c("M2_int_F0",
-            "cols_fa",
-            "cols_int",
-            "cols_it",
-            "cols_ps",
-            "module_interruption_scolaires",
-            "vars_identity",
+rm(list = c("vars_identity",
             "vars_doublons",
             "doublons",
             "list_doublons",
