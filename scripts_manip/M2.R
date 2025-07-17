@@ -40,6 +40,13 @@ M2_F2 <- M2_F1 %>%
   rename_with(~ gsub("^ps_", "sc_", .x), all_of(cols_ps)) %>% 
   rename( "id_tab_db" = "tab_db")
 
+### Clean up
+rm(list = c("cols_unique",
+            "cols_fa",
+            "cols_ps",
+            "M2_F0",
+            "M2_F1"))
+
 ## Remove duplicates ####
 
 doublons <- M2_F2 %>% 
