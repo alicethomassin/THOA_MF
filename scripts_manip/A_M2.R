@@ -114,3 +114,6 @@ rm(list = c("module_scolarite",
             "vars_doublons",
             "vars_identity"))
 
+# M1_V0 ####
+
+M1_V0 <- M2_F3
