@@ -183,4 +183,62 @@ rm(list = c("cols_add_pr",
             "cols_rmv_pp",
             "cols_sub_pr"))
 
+## Remove duplicates ####
+
+vars_doublons <- union("id_link", setdiff(names(M3_int_F2), names(M1_V3)))
+
+common_vars <- intersect(names(M3_int_F2), names(M1_V3))
+
+doublons <- M3_int_F2 %>% 
+  filter(is.na(id_date_creation))
+
+list_doublons <- unique(doublons$id_anonymat)
+
+identity <- M1_V3 %>% 
+  filter(id_link %in% list_doublons) %>% 
+  select(all_of(common_vars))
+
+clean <- left_join(
+  doublons %>% 
+    select(all_of(vars_doublons)),
+  identity,
+  by = "id_link",
+  relationship = "many-to-many"
+)
+
+comparaison <- bind_rows(
+  clean,
+  M3_int_F2 %>% 
+    filter(id_anonymat %in% clean$id_anonymat)
+) %>% 
+  relocate(id_anonymat, id_date_creation, pr_int_date_creation, an, mois) %>% 
+  arrange(id_anonymat, an, mois)
+
+corr <- comparaison %>% 
+  slice(-c(2, 7, 8, 10, 11, 14))
+
+ids_TPO <- union(unique(comparaison$id_anonymat), unique(comparaison$id_link))
+
+M3_int_F3 <- bind_rows(
+  M3_int_F2 %>% 
+    filter(!id_anonymat %in% ids_TPO),
+  corr
+) %>% 
+  arrange(id_anonymat, an, mois)
+
+### Clean up
+rm(list = c("vars_doublons",
+            "common_vars",
+            "doublons",
+            "list_doublons",
+            "comparaison",
+            "identity",
+            "clean",
+            "corr",
+            "ids_TPO"))
+
+
+
+
+
 
