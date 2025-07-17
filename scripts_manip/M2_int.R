@@ -1,6 +1,5 @@
 # INTERRUPTIONS SCOLAIRES ####
-module_interruption_scolaires <- here("raw_data", "gb_ddb_sc_02_int_02.sas7bdat")
-M2_int_F0 <- read_sas(module_interruption_scolaires)
+M2_int_F0 <- read_sas("../raw_data/gb_ddb_sc_02_int_02.sas7bdat")
 
 
 ## Rename cols ####
