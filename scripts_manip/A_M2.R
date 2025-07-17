@@ -1,9 +1,6 @@
 # Pour la manipulation des données
 library(tidyverse)
 
-# Pour ouvrir le script sur d'autres ordis
-library(here)
-
 # Pour importer les données SAS
 library(haven)
 
