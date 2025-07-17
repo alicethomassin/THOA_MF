@@ -237,8 +237,19 @@ rm(list = c("vars_doublons",
             "corr",
             "ids_TPO"))
 
+## Événements distincts ####
 
+test_event <- M3_int_F3 %>% 
+  group_by(id_anonymat, an, mois) %>%
+  mutate(n_comb = n()) %>% 
+  filter(n_comb > 1) %>% 
+  arrange(id_anonymat, an, mois) %>%
+  ungroup()
 
+# Une personne n'a pas renseigné de date, mais les raisons sont différentes
+# je vais donc conserver les deux observations
 
+### Clean up
+rm(test_event)
 
 
