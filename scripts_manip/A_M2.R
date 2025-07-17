@@ -98,22 +98,18 @@ M2_F3 <- bind_rows(
     TRUE ~ id_link
   ))
 
-### Nettoyer l'environnement 
-rm(list = c("module_scolarite",
-            "ids_TPO",
-            "clean",
-            "doublons",
-            "identity",
-            "M2_F0",
-            "M2_F1",
-            "M2_F2",
-            "cols_fa",
-            "cols_ps",
-            "cols_unique",
-            "list_doublons",
-            "vars_doublons",
-            "vars_identity"))
 
 # M1_V0 ####
 
 M1_V0 <- M2_F3
+
+### Nettoyer l'environnement 
+rm(list = c("ids_TPO",
+            "clean",
+            "doublons",
+            "identity",
+            "M2_F2",
+            "list_doublons",
+            "vars_doublons",
+            "vars_identity",
+            "M2_F3"))
