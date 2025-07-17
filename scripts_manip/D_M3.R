@@ -224,7 +224,8 @@ M3_int_F3 <- bind_rows(
     filter(!id_anonymat %in% ids_TPO),
   corr
 ) %>% 
-  arrange(id_anonymat, an, mois)
+  arrange(id_anonymat, an, mois) %>% 
+  filter(pr_int_type == "P")
 
 ### Clean up
 rm(list = c("vars_doublons",
@@ -269,6 +270,17 @@ rm(list = c("vars_identity",
             "test_identity_cols"))
 
 
+## Lignes uniques ####
+M3_int_F4 <- M3_int_F3 %>% 
+  group_by(id_anonymat) %>% 
+  arrange(id_anonymat, desc(is.na(an)), an, mois, reprise_an, reprise_mois) %>% 
+  mutate(pr_int_nb = n(),
+         rang_pr_int = case_when(
+           pr_int_nb == 1 ~ "pr_int01",
+           TRUE ~ paste0("pr_int", sprintf("%02d", row_number()))
+         )) %>% 
+  ungroup() %>% 
+  relocate(pr_int_nb, rang_pr_int, an)
 
 
 
