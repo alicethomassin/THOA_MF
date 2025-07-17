@@ -44,6 +44,13 @@ M2_rdb_F1 <- M2_rdb_F0 %>%
     TRUE ~ id_link
   ))
 
+### Clean up 
+rm(list = c("M2_int_F0",
+            "cols_fa",
+            "cols_ps",
+            "cols_rd",
+            "cols_rdb"))
+
 ## Remove duplicates ####
 
 vars_identity <- M2_rdb_F1 %>% 
