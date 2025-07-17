@@ -30,7 +30,44 @@ M3_F2 <- M3_F1 %>%
   mutate(across(
     .cols = where(is.character),
     .fns = ~ na_if(., "")
-  )) %>% 
+  ))
+
+### Clean up
+rm(list = c("M3_F0",
+            "M3_F1",
+            "cols_pp",
+            "cols_sap"))
+
+## Remove duplicates ####
+common_vars <- union("id_link", intersect(names(M3_F2), names(M1_V2)))
+
+vars_doublons <- union("id_link", setdiff(names(M3_F2), common_vars))
+
+doublons <- M3_F2 %>% 
+  filter(is.na(id_date_creation)) %>% 
+  mutate(id_link = id_anonymat)
+
+list_doublons <- unique(doublons$id_link)
+
+identity <- M1_V2 %>% 
+  filter(id_link %in% list_doublons) %>% 
+  select(all_of(common_vars))
+
+clean <- full_join(
+  identity,
+  doublons %>% 
+    select(all_of(vars_doublons)),
+  by = "id_link"
+) %>% 
+  select(-id_link)
+
+ids_TPO <- union(list_doublons, clean$id_anonymat)
+
+M3_F3 <- bind_rows(
+  M3_F2 %>% 
+    filter(!id_anonymat %in% ids_TPO),
+  clean
+) %>% 
   separate(id_sep,
            into = c("rid", "id_link"),
            sep = "_",
@@ -43,7 +80,42 @@ M3_F2 <- M3_F1 %>%
   ))
 
 ### Clean up
-rm(list = c("M3_F0",
-            "M3_F1",
-            "cols_pp",
-            "cols_sap"))
+rm(list = c("common_vars",
+            "ids_TPO",
+            "list_doublons",
+            "vars_doublons",
+            "clean",
+            "doublons",
+            "identity",
+            "M3_F2"))
+
+# M1_V3 ####
+
+## Verif join ####
+
+common_vars <- intersect(names(M1_V2), names(M3_F3))
+
+verif_join <- anti_join(
+  M3_F3,
+  M1_V2,
+  by = common_vars
+)
+
+M1_V3 <- left_join(
+  M1_V2,
+  M3_F3,
+  by = common_vars
+)
+
+### Clean up
+rm(list = c("common_vars",
+            "verif_join"))
+
+
+
+
+
+
+
+
+
