@@ -24,8 +24,6 @@ M2_F1 <- M2_F0 %>%
 
 ## Rename cols ####
 
-cols_unique <- c("commentaires_scol", "etspps")
-
 cols_fa <- M2_F1 %>% 
   select(all_of(starts_with("fa_"))) %>% 
   colnames()
@@ -35,14 +33,14 @@ cols_ps <- M2_F1 %>%
   colnames()
 
 M2_F2 <- M2_F1 %>% 
-  rename_with(~ paste0("sc_", .x), all_of(cols_unique)) %>% 
+  rename_with(~ paste0("sc_", .x), etspps) %>% 
   rename_with(~ gsub("^fa_", "sc_", .x), all_of(cols_fa)) %>% 
   rename_with(~ gsub("^ps_", "sc_", .x), all_of(cols_ps)) %>% 
-  rename( "id_tab_db" = "tab_db")
+  rename("id_tab_db" = "tab_db",
+         "sc_commentaires" = "commentaires_scol")
 
 ### Clean up
-rm(list = c("cols_unique",
-            "cols_fa",
+rm(list = c("cols_fa",
             "cols_ps",
             "M2_F0",
             "M2_F1"))
