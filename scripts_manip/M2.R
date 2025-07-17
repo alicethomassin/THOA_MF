@@ -100,6 +100,7 @@ M2_F3 <- bind_rows(
 
 ### Nettoyer l'environnement 
 rm(list = c("module_scolarite",
+            "ids_TPO",
             "clean",
             "doublons",
             "identity",
