@@ -308,5 +308,12 @@ M3_int_W1 <- M3_int_F4 %>%
     names_glue = "{rang_pr_int}_{.value}"
   )
 
+# M1_V4 ####
 
+common_vars <- intersect(names(M3_int_W1), names(M1_V3))
 
+verif_join <- anti_join(
+  M3_int_W1,
+  M1_V3,
+  by = common_vars
+)
