@@ -12,9 +12,7 @@ library(janitor)
 
 # SCOLARITÉ ####
 
-module_scolarite <- here("raw_data", "gb_ddb_id_01_sc_02.sas7bdat")
-M2_F0 <- read_sas(module_scolarite)
-
+M2_F0 <- read_sas("../raw_data/gb_ddb_id_01_sc_02.sas7bdat")
 ## Remove empty cols ####
 
 M2_F1 <- M2_F0 %>%
