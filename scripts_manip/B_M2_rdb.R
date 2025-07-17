@@ -45,7 +45,7 @@ M2_rdb_F1 <- M2_rdb_F0 %>%
   ))
 
 ### Clean up 
-rm(list = c("M2_int_F0",
+rm(list = c("M2_rdb_F0",
             "cols_fa",
             "cols_ps",
             "cols_rd",
@@ -70,7 +70,7 @@ doublons <- M2_rdb_F1 %>%
 
 list_doublons <- unique(doublons$id_link)
 
-identity <- M2_F3 %>% 
+identity <- M1_V0 %>% 
   filter(id_link %in% list_doublons) %>% 
   select(all_of(vars_identity))
 
@@ -100,13 +100,7 @@ M2_rdb_F2 <- bind_rows(
   ))
 
 ### Nettoyer l'environnement 
-rm(list = c("module_redoublement_scolaire",
-            "M2_rdb_F0",
-            "cols_fa",
-            "cols_ps",
-            "cols_rd",
-            "cols_rdb",
-            "M2_rdb_F1",
+rm(list = c("M2_rdb_F1",
             "doublons",
             "list_doublons",
             "identity",
@@ -196,3 +190,31 @@ M2_rdb_W1 <- M2_rdb_F4 %>%
 rm(list = c("M2_rdb_F3",
             "vars_wider",
             "M2_rdb_F4"))
+
+# M1_V1 ####
+common_vars <- intersect(names(M1_V0), names(M2_rdb_W1))
+
+verif_join <- anti_join(
+  M2_rdb_W1,
+  M1_V0,
+  by = common_vars
+)
+
+M1_V1 <- left_join(
+  M1_V0,
+  M2_rdb_W1,
+  by = common_vars
+) %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+    id_age_cat = case_when(
+      (is.na(id_age_cat) & id_age < 18) ~ "Adolescent",
+      (is.na(id_age_cat) & id_age > 17) ~ "Adulte",
+      TRUE ~ id_age_cat
+    )) %>% 
+  ungroup()
+
+# Nettoyer l'environnement
+rm(list = c("common_vars",
+            "M2_rdb_W1",
+            "verif_join"))
