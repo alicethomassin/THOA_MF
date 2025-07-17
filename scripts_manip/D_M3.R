@@ -252,4 +252,27 @@ test_event <- M3_int_F3 %>%
 ### Clean up
 rm(test_event)
 
+## Identité unique ####
+vars_identity <- setdiff(intersect(names(M3_int_F3), names(M1_V3)), "id_anonymat")
+
+test_identity_cols <- M3_int_F3 %>% 
+  group_by(id_anonymat) %>% 
+  summarise(across(all_of(vars_identity), ~ n_distinct(.) > 1)) %>% 
+  rowwise() %>% 
+  filter(sum(c_across(-id_anonymat)) > 0) %>% 
+  select(id_anonymat, where(~ !all(. == FALSE)))
+
+# Toutes les identités sont les mêmes
+
+### Clean up
+rm(list = c("vars_identity",
+            "test_identity_cols"))
+
+
+
+
+
+
+
+
 
