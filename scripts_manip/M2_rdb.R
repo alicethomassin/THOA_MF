@@ -1,7 +1,6 @@
 # REDOUBLEMENT ####
 
-module_redoublement_scolaire <- here("raw_data", "gb_ddb_sc_02_rdb_02.sas7bdat")
-M2_rdb_F0 <- read_sas(module_redoublement_scolaire)
+M2_rdb_F0 <- read_sas("../raw_data/gb_ddb_sc_02_rdb_02.sas7bdat")
 
 # Pas de colonnes vides
 
