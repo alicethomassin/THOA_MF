@@ -194,3 +194,23 @@ M2_int_W1 <- M2_int_F4 %>%
 rm(list = c("M2_int_F3",
             "vars_wider",
             "M2_int_F4"))
+
+# M1_V2 ####
+common_vars <- intersect(names(M1_V1), names(M2_int_W1))
+
+verif_join <- anti_join(
+  M2_int_W1,
+  M1_V1,
+  by = common_vars
+)
+
+M1_V2 <- left_join(
+  M1_V1,
+  M2_int_W1,
+  by = common_vars
+)
+
+# Nettoyer l'environnement
+rm(list = c("common_vars",
+            "M2_int_W1",
+            "verif_join"))
