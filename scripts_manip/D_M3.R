@@ -148,7 +148,8 @@ cols_rmv_pp <- M3_int_F1 %>%
 # Variables où ne fait que changer le préfix
 cols_sub_pr <- M3_int_F1 %>% 
   select(all_of(starts_with("pp_")), -all_of(c(cols_rmv_pp_interromp, 
-                                               cols_rmv_pp))) %>% 
+                                               cols_rmv_pp)),
+         -pp_reprise) %>% 
   colnames()
 
 
@@ -161,7 +162,8 @@ M3_int_F2 <- M3_int_F1 %>%
          "pr_commentaires" = "commentaires_prof",
          "pr_int_date_creation" = "int_date_creation",
          "pr_int_interromp"  = "int_pp_interromp",
-         "pr_int_type" = "int_type") %>% 
+         "pr_int_type" = "int_type",
+         "reprise" = "pp_reprise") %>% 
   mutate(across(
     .cols = where(is.character),
     .fns = ~ na_if(., "")
@@ -225,7 +227,12 @@ M3_int_F3 <- bind_rows(
   corr
 ) %>% 
   arrange(id_anonymat, an, mois) %>% 
-  filter(pr_int_type == "P")
+  filter(pr_int_type == "P") %>% 
+  group_by(id_anonymat) %>% 
+  mutate(pr_int_date_creation = case_when(
+    n_distinct(pr_int_date_creation) > 1 ~ id_date_creation,
+    TRUE ~ pr_int_date_creation)) %>% 
+  ungroup()
 
 ### Clean up
 rm(list = c("vars_doublons",
@@ -254,11 +261,16 @@ test_event <- M3_int_F3 %>%
 rm(test_event)
 
 ## Identité unique ####
-vars_identity <- setdiff(intersect(names(M3_int_F3), names(M1_V3)), "id_anonymat")
+vars_wider <- M3_int_F3 %>% 
+  select(-all_of(starts_with("id_")),
+         -all_of(starts_with("pr_"))) %>% 
+  colnames()
+
+vars_fixe <- setdiff(setdiff(names(M3_int_F3), vars_wider), "id_anonymat")
 
 test_identity_cols <- M3_int_F3 %>% 
   group_by(id_anonymat) %>% 
-  summarise(across(all_of(vars_identity), ~ n_distinct(.) > 1)) %>% 
+  summarise(across(all_of(vars_fixe), ~ n_distinct(.) > 1)) %>% 
   rowwise() %>% 
   filter(sum(c_across(-id_anonymat)) > 0) %>% 
   select(id_anonymat, where(~ !all(. == FALSE)))
@@ -266,8 +278,9 @@ test_identity_cols <- M3_int_F3 %>%
 # Toutes les identités sont les mêmes
 
 ### Clean up
-rm(list = c("vars_identity",
-            "test_identity_cols"))
+rm(list = c("test_identity_cols",
+            "vars_wider",
+            "vars_fixe"))
 
 
 ## Lignes uniques ####
@@ -280,11 +293,20 @@ M3_int_F4 <- M3_int_F3 %>%
            TRUE ~ paste0("pr_int", sprintf("%02d", row_number()))
          )) %>% 
   ungroup() %>% 
-  relocate(pr_int_nb, rang_pr_int, an)
+  relocate(pr_int_nb, rang_pr_int, an, mois, reprise_an, reprise_mois)
 
+vars_wider <- M3_int_F4 %>% 
+  select(-all_of(starts_with("id_")),
+         -all_of(starts_with("pr_")),
+         -rang_pr_int) %>% 
+  colnames()
 
-
-
+M3_int_W1 <- M3_int_F4 %>% 
+  pivot_wider(
+    names_from = rang_pr_int,
+    values_from = all_of(vars_wider),
+    names_glue = "{rang_pr_int}_{.value}"
+  )
 
 
 
