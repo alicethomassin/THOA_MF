@@ -99,3 +99,85 @@ rm(list = c("M4_cpl_F0",
             "vars_sub_sf",
             "vars_conjt"))
 
+## 3.2.3 Remove duplicates ####
+common_vars <- union("id_link", intersect(names(M4_cpl_F2), names(M1_V5)))
+vars_doublons <- union("id_link", setdiff(names(M4_cpl_F2), common_vars))
+
+doublons <- M4_cpl_F2 %>% 
+  filter(is.na(id_date_creation))
+
+list_doublons <- unique(doublons$id_link)
+
+identity <- M1_V5 %>% 
+  filter(id_link %in% list_doublons) %>% 
+  select(all_of(common_vars))
+
+clean <- left_join(
+  doublons %>% 
+    select(all_of(vars_doublons)),
+  identity,
+  relationship = "many-to-many",
+  by = "id_link"
+)
+
+#### Verif double couple ####
+
+vars_couple <- M4_cpl_F2 %>% 
+  select(-all_of(starts_with("fa_")),
+         -all_of(starts_with("id_"))) %>% 
+  colnames()
+
+comparaison <- bind_rows(
+  clean,
+  M4_cpl_F2 %>% 
+    filter(id_anonymat %in% clean$id_anonymat),
+  .id = "source"
+) %>%
+  arrange(id_anonymat, conjt_union_an, conjt_union_mois) 
+
+verif_couples <- comparaison %>%
+  group_by(id_anonymat, conjt_nais_an, conjt_nais_mois, conjt_union_an, conjt_union_mois) %>% 
+  mutate(n_comb = n()) %>% 
+  filter(n_comb > 1) 
+
+couples_corr <- comparaison %>% 
+  filter(id_anonymat %in% verif_couples$id_anonymat) %>% 
+  relocate(id_anonymat, all_of(vars_couple), source) %>% 
+  slice(-c(1, 4, 6, 9, 11, 14, 15, 18)) %>% 
+  select(-source)
+
+couples_clean <- bind_rows(
+  clean %>% 
+    filter(!id_anonymat %in% couples_corr$id_anonymat),
+  couples_corr
+)
+
+ids_TPO <- unique(union(couples_clean$id_anonymat, couples_clean$id_link))
+
+M4_cpl_F3 <- bind_rows(
+  M4_cpl_F2 %>% 
+    filter(!id_anonymat %in% ids_TPO),
+  couples_clean
+) %>% 
+  arrange(id_anonymat, conjt_union_an, conjt_union_mois)
+
+### Clean up
+rm(list = c("common_vars",
+            "vars_doublons",
+            "doublons",
+            "list_doublons",
+            "identity",
+            "clean",
+            "vars_couple",
+            "comparaison",
+            "verif_couples",
+            "couples_corr",
+            "couples_clean",
+            "ids_TPO",
+            "M4_cpl_F3"))
+
+
+
+
+
+
