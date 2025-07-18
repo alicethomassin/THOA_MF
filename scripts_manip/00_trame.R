@@ -919,3 +919,19 @@ M1_V4 <- left_join(
   M3_int_W2,
   by = common_vars
 )
+
+### Clean up
+rm(list = c("common_vars",
+            "verif_join",
+            "comparaison",
+            "test_identity_cols",
+            "vars_verif",
+            "corrections",
+            "vars_wider",
+            "M3_F3",
+            "M3_int_F1",
+            "M3_int_F2",
+            "M3_int_F3",
+            "M3_int_F4",
+            "M3_int_W1",
+            "M3_int_W2"))
