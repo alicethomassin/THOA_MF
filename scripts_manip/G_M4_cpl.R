@@ -160,7 +160,17 @@ M4_cpl_F3 <- bind_rows(
   couples_clean
 ) %>% 
   filter(fa_couple_type == "P") %>% 
-  arrange(id_anonymat, conjt_union_an, conjt_union_mois)
+  arrange(id_anonymat, conjt_union_an, conjt_union_mois) %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+    fa_couple_date_creation = case_when(
+      n_distinct(fa_couple_date_creation) > 1 ~ id_date_creation,
+      TRUE ~ fa_couple_date_creation),
+    fa_couple_cat = case_when(
+      n_distinct(fa_couple_cat) > 1 ~ "fa_04_couple_04",
+      TRUE ~ fa_couple_cat
+    )) %>% 
+  ungroup()
 
 ### Clean up
 rm(list = c("common_vars",
@@ -177,7 +187,30 @@ rm(list = c("common_vars",
             "ids_TPO",
             "M4_cpl_F2"))
 
+## 3.2.4 Événements distincts ####
+test_event <- M4_cpl_F3 %>% 
+  group_by(id_anonymat, conjt_union_an, conjt_union_mois, conjt_nais_an) %>%
+  mutate(n_comb = n()) %>% 
+  filter(n_comb > 1) %>% 
+  arrange(id_anonymat, conjt_union_an, conjt_union_mois, conjt_nais_an) %>%
+  ungroup()
 
+rm(test_event)
 
+## 3.2.5 Identité unique ####
+vars_wider <- M4_cpl_F3 %>% 
+  select(-all_of(starts_with("fa_")),
+         -all_of(starts_with("id_"))) %>% 
+  colnames()
 
+vars_fixe <- setdiff(setdiff(names(M4_cpl_F3), vars_wider), "id_anonymat")
+
+test_identity_cols <- M4_cpl_F3 %>% 
+  group_by(id_anonymat) %>% 
+  summarise(across(all_of(vars_fixe), ~ n_distinct(.) > 1)) %>% 
+  rowwise() %>% 
+  filter(sum(c_across(-id_anonymat)) > 0) %>% 
+  select(id_anonymat, where(~ !all(. == FALSE)))
+
+rm(test_identity_cols)
 
