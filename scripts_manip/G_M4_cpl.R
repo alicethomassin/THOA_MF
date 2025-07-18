@@ -159,6 +159,7 @@ M4_cpl_F3 <- bind_rows(
     filter(!id_anonymat %in% ids_TPO),
   couples_clean
 ) %>% 
+  filter(fa_couple_type == "P") %>% 
   arrange(id_anonymat, conjt_union_an, conjt_union_mois)
 
 ### Clean up
@@ -175,7 +176,6 @@ rm(list = c("common_vars",
             "couples_clean",
             "ids_TPO",
             "M4_cpl_F2"))
-
 
 
 
