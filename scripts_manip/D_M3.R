@@ -18,7 +18,10 @@ cols_sap <- M3_F1 %>%
   colnames()
 
 cols_pp <- M3_F1 %>% 
-  select(all_of(starts_with("pp_"))) %>% 
+  select(all_of(starts_with("pp_")),
+         -pp_an_prems,
+         -pp_ado_pdt_6mois
+         ) %>% 
   colnames()
 
 M3_F2 <- M3_F1 %>% 
@@ -26,7 +29,9 @@ M3_F2 <- M3_F1 %>%
   rename_with(~ gsub("^pp_", "pr_", .x), all_of(cols_pp)) %>% 
   rename("id_tab_db" = "tab_db",
          "pr_sap_csp_prof" = "csp_sap_prof",
-         "pr_commentaires" = "commentaires_prof") %>% 
+         "pr_commentaires" = "commentaires_prof",
+         "pr_prems_an" = "pp_an_prems",
+         "pr_pdt_6mois_ado" = "pp_ado_pdt_6mois") %>% 
   mutate(across(
     .cols = where(is.character),
     .fns = ~ na_if(., "")
@@ -122,6 +127,8 @@ M3_int_F1 <- M3_int_F0 %>%
   )) %>% 
   remove_empty("cols")
 
+rm(M3_int_F0)
+
 ## 2.2.2 Rename cols ####
 
 # Colonnes où on ajoute le préfix pr
@@ -148,7 +155,8 @@ cols_rmv_pp <- M3_int_F1 %>%
 cols_sub_pr <- M3_int_F1 %>% 
   select(all_of(starts_with("pp_")), -all_of(c(cols_rmv_pp_interromp, 
                                                cols_rmv_pp)),
-         -pp_reprise) %>% 
+         -pp_reprise,
+         -pp_an_prems) %>% 
   colnames()
 
 
@@ -162,7 +170,8 @@ M3_int_F2 <- M3_int_F1 %>%
          "pr_int_date_creation" = "int_date_creation",
          "pr_int_interromp"  = "int_pp_interromp",
          "pr_int_type" = "int_type",
-         "reprise" = "pp_reprise") %>% 
+         "reprise" = "pp_reprise",
+         "pr_prems_an" = "pp_an_prems") %>% 
   mutate(across(
     .cols = where(is.character),
     .fns = ~ na_if(., "")
