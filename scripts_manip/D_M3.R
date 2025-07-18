@@ -1,7 +1,7 @@
-# PROFESSION ####
+# 2.1 PROFESSION ####
 M3_F0 <- read_sas("../raw_data/gb_ddb_id_01_pr_03.sas7bdat")
 
-## Remove empty cols ####
+## 2.1.1 Remove empty cols ####
 M3_F1 <- M3_F0 %>% 
   mutate(across(
     .cols = where(is.character),
@@ -9,7 +9,7 @@ M3_F1 <- M3_F0 %>%
   )) %>% 
   remove_empty("cols")
 
-## Rename cols ####
+## 2.1.2 Rename cols ####
 
 cols_sap <- M3_F1 %>% 
   select(all_of(starts_with("sap_")),
@@ -38,7 +38,7 @@ rm(list = c("M3_F0",
             "cols_pp",
             "cols_sap"))
 
-## Remove duplicates ####
+## 2.1.3 Remove duplicates ####
 common_vars <- union("id_link", intersect(names(M3_F2), names(M1_V2)))
 
 vars_doublons <- union("id_link", setdiff(names(M3_F2), common_vars))
@@ -89,9 +89,7 @@ rm(list = c("common_vars",
             "identity",
             "M3_F2"))
 
-# M1_V3 ####
-
-## Verif join ####
+# D - M1_V3 ####
 
 common_vars <- intersect(names(M1_V2), names(M3_F3))
 
@@ -111,9 +109,9 @@ M1_V3 <- left_join(
 rm(list = c("common_vars",
             "verif_join"))
 
-# INTERRUPTIONS PRO ####
+# 2.2 INTERRUPTIONS PRO ####
 
-## Remove empty cols ####
+## 2.2.1 Remove empty cols ####
 M3_int_F0 <- read_sas("../raw_data/gb_ddb_pr_03_int_03.sas7bdat")
 
 M3_int_F1 <- M3_int_F0 %>% 
@@ -123,7 +121,7 @@ M3_int_F1 <- M3_int_F0 %>%
   )) %>% 
   remove_empty("cols")
 
-## Rename cols ####
+## 2.2.2 Rename cols ####
 
 # Colonnes où on ajoute le préfix pr
 cols_add_pr <- M3_int_F1 %>% 
@@ -185,7 +183,7 @@ rm(list = c("cols_add_pr",
             "cols_rmv_pp",
             "cols_sub_pr"))
 
-## Remove duplicates ####
+## 2.2.3 Remove duplicates ####
 
 vars_doublons <- union("id_link", setdiff(names(M3_int_F2), names(M1_V3)))
 
@@ -245,7 +243,7 @@ rm(list = c("vars_doublons",
             "corr",
             "ids_TPO"))
 
-## Événements distincts ####
+## 2.2.4 Événements distincts ####
 
 test_event <- M3_int_F3 %>% 
   group_by(id_anonymat, an, mois) %>%
@@ -260,7 +258,7 @@ test_event <- M3_int_F3 %>%
 ### Clean up
 rm(test_event)
 
-## Identité unique ####
+## 2.2.5 Identité unique ####
 vars_wider <- M3_int_F3 %>% 
   select(-all_of(starts_with("id_")),
          -all_of(starts_with("pr_"))) %>% 
@@ -283,7 +281,7 @@ rm(list = c("test_identity_cols",
             "vars_fixe"))
 
 
-## Lignes uniques ####
+## 2.2.6 Lignes uniques ####
 M3_int_F4 <- M3_int_F3 %>% 
   group_by(id_anonymat) %>% 
   arrange(id_anonymat, desc(is.na(an)), an, mois, reprise_an, reprise_mois) %>% 
@@ -308,7 +306,7 @@ M3_int_W1 <- M3_int_F4 %>%
     names_glue = "{rang_pr_int}_{.value}"
   )
 
-# M1_V4 ####
+# E - M1_V4 ####
 
 common_vars <- intersect(names(M3_int_W1), names(M1_V3))
 
