@@ -93,6 +93,7 @@ rm(list = c("common_vars",
 
 common_vars <- intersect(names(M1_V2), names(M3_F3))
 
+
 verif_join <- anti_join(
   M3_F3,
   M1_V2,
