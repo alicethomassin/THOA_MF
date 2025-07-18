@@ -214,3 +214,31 @@ test_identity_cols <- M4_cpl_F3 %>%
 
 rm(test_identity_cols)
 
+## 3.2.6 Lignes uniques ####
+M4_cpl_F4 <- M4_cpl_F3 %>% 
+  group_by(id_anonymat) %>% 
+  arrange(id_anonymat, desc(is.na(conjt_union_an)), conjt_union_an, conjt_union_mois) %>% 
+  mutate(fa_cpl_nb = n(),
+         rang_fa_cpl = case_when(
+           fa_cpl_nb == 1 ~ "fa_cpl01",
+           TRUE ~ paste0("fa_cpl", sprintf("%02d", row_number()))
+         )) %>% 
+  ungroup() %>% 
+  relocate(fa_cpl_nb, rang_fa_cpl, conjt_union_an, conjt_union_mois)
+
+vars_wider <- M4_cpl_F4 %>% 
+  select(-all_of(starts_with("id_")),
+         -all_of(starts_with("fa_")),
+         -rang_fa_cpl) %>% 
+  colnames()
+
+M4_cpl_W1 <- M4_cpl_F4 %>% 
+  pivot_wider(
+    names_from = rang_fa_cpl,
+    values_from = all_of(vars_wider),
+    names_glue = "{rang_fa_cpl}_{.value}"
+  )
+
+### Clean up
+rm(list = c("vars_wider",
+            "vars_fixe"))
