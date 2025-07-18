@@ -325,3 +325,51 @@ verif_join <- anti_join(
   M1_V3,
   by = common_vars
 )
+
+# Réunir tous les individus et les variables concernés
+comparaison <- bind_rows(
+  M3_int_W1 %>% 
+    filter(id_anonymat %in% verif_join$id_anonymat) %>%
+    select(all_of(common_vars)),
+  M1_V3 %>% 
+    filter(id_anonymat %in% verif_join$id_anonymat) %>%
+    select(all_of(common_vars))
+) %>% 
+  arrange(id_anonymat)
+
+# Obtenir le nom des variables problématiques
+test_identity_cols <- comparaison %>% 
+  group_by(id_anonymat) %>% 
+  summarise(across(all_of(setdiff(common_vars, "id_anonymat")), ~ n_distinct(.) > 1)) %>% 
+  rowwise() %>% 
+  filter(sum(c_across(-id_anonymat)) > 0) %>% 
+  select(id_anonymat, where(~ !all(. == FALSE)))
+
+vars_verif <- colnames(test_identity_cols)
+
+# Remplacer les variables problématiques par celles de M1_V3
+corrections <- M1_V3 %>% 
+  select(all_of(vars_verif)) %>% 
+  filter(id_anonymat %in% M3_int_W1$id_anonymat)
+
+M3_int_W2 <- left_join(
+  M3_int_W1 %>% 
+    select(-setdiff(vars_verif, "id_anonymat")),
+  corrections,
+  by = "id_anonymat"
+) 
+
+# Retester l'anti_join
+verif_join <- anti_join(
+  M3_int_W2,
+  M1_V3,
+  by = common_vars
+) # Le df est vide
+
+M1_V4 <- left_join(
+  M1_V3,
+  M3_int_W2,
+  by = common_vars
+)
+
+
