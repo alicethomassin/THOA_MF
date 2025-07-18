@@ -1440,4 +1440,5 @@ rm(list = c("common_vars",
             "M4_cpl_F3",
             "M4_cpl_F4",
             "M4_cpl_W1",
-            "M4_cpl_W2"))
+            "M4_cpl_W2",
+            "M4_F4"))
