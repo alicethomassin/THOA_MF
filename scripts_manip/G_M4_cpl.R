@@ -242,3 +242,104 @@ M4_cpl_W1 <- M4_cpl_F4 %>%
 ### Clean up
 rm(list = c("vars_wider",
             "vars_fixe"))
+
+
+# G - M1_V6 ####
+common_vars <- intersect(names(M4_cpl_W1), names(M1_V5))
+
+verif_join <- anti_join(
+  M4_cpl_W1,
+  M1_V5,
+  by = common_vars
+)
+
+# Réunir tous les individus et les variables concernés
+comparaison <- bind_rows(
+  M4_cpl_W1 %>% 
+    filter(id_anonymat %in% verif_join$id_anonymat) %>%
+    select(all_of(common_vars)),
+  M1_V5 %>% 
+    filter(id_anonymat %in% verif_join$id_anonymat) %>%
+    select(all_of(common_vars)),
+  .id = "source"
+) %>% 
+  arrange(id_anonymat)
+
+# Obtenir le nom des variables problématiques
+test_identity_cols <- comparaison %>% 
+  group_by(id_anonymat) %>% 
+  summarise(across(all_of(setdiff(common_vars, "id_anonymat")), ~ n_distinct(.) > 1)) %>% 
+  rowwise() %>% 
+  filter(sum(c_across(-id_anonymat)) > 0) %>% 
+  select(id_anonymat, where(~ !all(. == FALSE)))
+
+vars_verif <- colnames(test_identity_cols)
+
+matrim <- M1_V5 %>%
+  filter(id_anonymat %in% M4_cpl_W1$id_anonymat) %>% 
+  select(id_anonymat, fa_matrimoniale)
+
+M4_cpl_W2 <- left_join(
+  M4_cpl_W1 %>% 
+    select(-fa_matrimoniale),
+  matrim,
+  by = "id_anonymat"
+)
+
+# Deuxieme fois
+verif_join <- anti_join(
+  M4_cpl_W2,
+  M1_V5,
+  by = common_vars
+)
+
+# Réunir tous les individus et les variables concernés
+comparaison <- bind_rows(
+  M4_cpl_W2 %>% 
+    filter(id_anonymat %in% verif_join$id_anonymat) %>%
+    select(all_of(common_vars)),
+  M1_V5 %>% 
+    filter(id_anonymat %in% verif_join$id_anonymat) %>%
+    select(all_of(common_vars)),
+  .id = "source"
+) %>% 
+  arrange(id_anonymat)
+
+# Obtenir le nom des variables problématiques
+test_identity_cols <- comparaison %>% 
+  group_by(id_anonymat) %>% 
+  summarise(across(all_of(setdiff(common_vars, "id_anonymat")), ~ n_distinct(.) > 1)) %>% 
+  rowwise() %>% 
+  filter(sum(c_across(-id_anonymat)) > 0) %>% 
+  select(id_anonymat, where(~ !all(. == FALSE)))
+
+vars_verif <- colnames(test_identity_cols)
+
+corrections_foyer <- M4_cpl_W2 %>% 
+  select(id_anonymat, fa_fo_vie_corr = fa_fo_vie)
+
+M1_V5_T <- M1_V5 %>% 
+  left_join(
+    corrections_foyer,
+    by = "id_anonymat") %>% 
+  mutate(
+    fa_fo_vie = if_else(
+      !is.na(fa_fo_vie_corr),
+      fa_fo_vie_corr,
+      fa_fo_vie
+    )
+  ) %>% 
+  select(-fa_fo_vie_corr)
+
+# Troisième fois
+verif_join <- anti_join(
+  M4_cpl_W2,
+  M1_V5_T,
+  by = common_vars
+) # le df est vide
+
+M1_V6 <- left_join(
+  M1_V5_T,
+  M4_cpl_W2,
+  by = common_vars
+)
