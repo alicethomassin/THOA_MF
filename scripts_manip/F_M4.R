@@ -101,3 +101,46 @@ rm(list = c("common_vars",
             "doublons",
             "identity",
             "M4_F2"))
+
+# F - M1_V4 ####
+common_vars <- intersect(names(M4_F3), names(M1_V4))
+
+## f - corriger cas unique DDN ####
+verif_join <- anti_join(
+  M4_F3,
+  M1_V4,
+  by = common_vars
+) # J'ai vu que le rpoblème était la DDn d'une personne. J'ai donc transposé
+# la colonne des DDN de M1 à M4
+
+YUVJT <- M1_V4 %>% 
+  select(id_anonymat, id_date_nais) %>% 
+  filter(id_anonymat %in% verif_join)
+
+id_DDN <- YUVJT$id_anonymat
+DDN <- YUVJT$id_date_nais
+
+M4_F4 <- left_join(
+  M4_F3 %>% 
+    select(-id_date_nais),
+  M1_V4 %>% 
+    select(id_anonymat, id_date_nais),
+  by = "id_anonymat"
+)
+
+verif_join <- anti_join(
+  M4_F4,
+  M1_V4,
+  by = common_vars
+) # Le df est vide on peut donc joindre les deux
+
+M1_V5 <- left_join(
+  M1_V4,
+  M4_F4,
+  by = common_vars
+)
+
+### Clean up
+rm(list = c("common_vars",
+            "verif_join",
+            "M4_F3"))
