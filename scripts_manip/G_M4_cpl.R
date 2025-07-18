@@ -343,3 +343,17 @@ M1_V6 <- left_join(
   M4_cpl_W2,
   by = common_vars
 )
+
+### Clean up
+rm(list = c("common_vars",
+            "matrim",
+            "verif_join",
+            "comparaison",
+            "test_identity_cols",
+            "vars_verif",
+            "corrections_foyer",
+            "M1_V5_T",
+            "M4_cpl_F3",
+            "M4_cpl_F4",
+            "M4_cpl_W1",
+            "M4_cpl_W2"))
