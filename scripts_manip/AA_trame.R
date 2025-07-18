@@ -7,10 +7,10 @@ library(haven)
 # Pour identifier les colonnes vides
 library(janitor)
 
-# SCOLARITÉ ####
+# 1.1 SCOLARITÉ ####
 
 M2_F0 <- read_sas("../raw_data/gb_ddb_id_01_sc_02.sas7bdat")
-## Remove empty cols ####
+## 1.1.1 Remove empty cols ####
 
 M2_F1 <- M2_F0 %>%
   mutate(across(
@@ -19,7 +19,7 @@ M2_F1 <- M2_F0 %>%
   )) %>% 
   remove_empty("cols")
 
-## Rename cols ####
+## 1.1.2 Rename cols ####
 
 cols_fa <- M2_F1 %>% 
   select(all_of(starts_with("fa_"))) %>% 
@@ -42,7 +42,7 @@ rm(list = c("cols_fa",
             "M2_F0",
             "M2_F1"))
 
-## Remove duplicates ####
+## 1.1.3 Remove duplicates ####
 
 doublons <- M2_F2 %>% 
   filter(is.na(id_date_creation)) %>% 
@@ -94,7 +94,7 @@ M2_F3 <- bind_rows(
   ))
 
 
-# M1_V0 ####
+# A - M1_V0 ####
 
 M1_V0 <- M2_F3
 
@@ -109,13 +109,13 @@ rm(list = c("ids_TPO",
             "vars_identity",
             "M2_F3"))
 
-# REDOUBLEMENT ####
+# 1.2 REDOUBLEMENT ####
 
 M2_rdb_F0 <- read_sas("../raw_data/gb_ddb_sc_02_rdb_02.sas7bdat")
 
 # Pas de colonnes vides
 
-## Rename cols ####
+## 1.2.1 Rename cols ####
 
 cols_fa <- M2_rdb_F0 %>% 
   select(all_of(starts_with("fa_"))) %>% 
@@ -162,7 +162,7 @@ rm(list = c("M2_rdb_F0",
             "cols_rd",
             "cols_rdb"))
 
-## Remove duplicates ####
+## 1.2.2 Remove duplicates ####
 
 vars_identity <- M2_rdb_F1 %>% 
   select(all_of(starts_with("id_")),
@@ -220,7 +220,7 @@ rm(list = c("M2_rdb_F1",
             "clean",
             "ids_TPO"))
 
-## Événements distincts ####
+## 1.2.3 Événements distincts ####
 
 test_event <- M2_rdb_F2 %>% 
   group_by(id_anonymat) %>% 
@@ -254,7 +254,7 @@ rm(list = c("clean",
             "test_event",
             "M2_rdb_F2"))
 
-## Identité unique ####
+## 1.2.4 Identité unique ####
 
 vars_identity <- M2_rdb_F3 %>% 
   select(all_of(starts_with("id_")),
@@ -273,7 +273,7 @@ test_identity_cols <- M2_rdb_F3 %>%
 rm(list = c("test_identity_cols",
             "vars_identity"))
 
-## Lignes uniques ####
+## 1.2.5 Lignes uniques ####
 
 M2_rdb_F4 <- M2_rdb_F3 %>% 
   group_by(id_anonymat) %>% 
@@ -302,7 +302,7 @@ rm(list = c("M2_rdb_F3",
             "vars_wider",
             "M2_rdb_F4"))
 
-# M1_V1 ####
+# B - M1_V1 ####
 common_vars <- intersect(names(M1_V0), names(M2_rdb_W1))
 
 verif_join <- anti_join(
@@ -330,11 +330,11 @@ rm(list = c("common_vars",
             "M2_rdb_W1",
             "verif_join"))
 
-# INTERRUPTIONS SCOLAIRES ####
+# 1.3 INTERRUPTIONS SCOLAIRES ####
 M2_int_F0 <- read_sas("../raw_data/gb_ddb_sc_02_int_02.sas7bdat")
 
 
-## Rename cols ####
+## 1.3.1 Rename cols ####
 
 cols_fa <- M2_int_F0 %>% 
   select(all_of(starts_with("fa_"))) %>% 
@@ -381,7 +381,7 @@ rm(list = c("M2_int_F0",
             "cols_it",
             "cols_ps"))
 
-## Remove duplicates ####
+## 1.3.2 Remove duplicates ####
 
 vars_identity <- M2_int_F1 %>% 
   select(all_of(starts_with("id_")),
@@ -429,7 +429,7 @@ rm(list = c("vars_identity",
             "ids_TPO",
             "M2_int_F1"))
 
-## Événements distincts ####
+## 1.3.3 Événements distincts ####
 test_event <- M2_int_F2 %>% 
   group_by(id_anonymat, classe, an_repr) %>%
   mutate(n_comb = n()) %>% 
@@ -479,7 +479,7 @@ rm(list = c("clean",
             "test_event",
             "M2_int_F2"))
 
-## Identité unique ####
+## 1.3.4 Identité unique ####
 vars_identity <- M2_int_F3 %>% 
   select(all_of(starts_with("id_")),
          all_of(starts_with("sc_")),
@@ -497,7 +497,7 @@ test_identity_cols <- M2_int_F3 %>%
 rm(list = c("test_identity_cols",
             "vars_identity"))
 
-## Lignes uniques ####
+## 1.3.5 Lignes uniques ####
 M2_int_F4 <- M2_int_F3 %>% 
   group_by(id_anonymat) %>% 
   arrange(id_anonymat, desc(is.na(an)), an, mois, classe) %>% 
@@ -527,7 +527,7 @@ rm(list = c("M2_int_F3",
             "vars_wider",
             "M2_int_F4"))
 
-# M1_V2 ####
+# C - M1_V2 ####
 common_vars <- intersect(names(M1_V1), names(M2_int_W1))
 
 verif_join <- anti_join(
