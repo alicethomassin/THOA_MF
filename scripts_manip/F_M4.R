@@ -51,12 +51,53 @@ rm(list = c("M4_F0",
             "vars_add_fa",
             "vars_sub_sf"))
 
+## 3.1.3 Remove duplicates ####
+common_vars <- union("id_link", intersect(names(M4_F2), names(M1_V4)))
+vars_doublons <- union("id_link", setdiff(names(M4_F2), common_vars))
 
+doublons <- M4_F2 %>% 
+  filter(is.na(id_date_creation)) %>% 
+  mutate(id_link = id_anonymat)
 
+list_doublons <- unique(doublons$id_link)
 
+identity <- M1_V4 %>% 
+  filter(id_link %in% list_doublons) %>% 
+  select(all_of(common_vars))
 
+clean <- left_join(
+  identity,
+  doublons %>% 
+    select(all_of(vars_doublons)),
+  by = "id_link"
+)
 
+ids_TPO <- union(clean$id_anonymat, clean$id_link)
 
+M4_F3 <- bind_rows(
+  M4_F2 %>% 
+    filter(!id_anonymat %in% ids_TPO),
+  clean %>% 
+    select(-id_link)
+) %>% 
+  arrange(id_anonymat) %>% 
+  separate(id_sep,
+           into = c("rid", "id_link"),
+           sep = "_",
+           remove = FALSE,
+           fill = "right") %>%
+  select(-rid) %>% 
+  mutate(id_link = case_when(
+    is.na(id_link) ~ id_anonymat,
+    TRUE ~ id_link
+  ))
 
-
-
+### Clean up
+rm(list = c("common_vars",
+            "ids_TPO",
+            "list_doublons",
+            "vars_doublons",
+            "clean",
+            "doublons",
+            "identity",
+            "M4_F2"))
