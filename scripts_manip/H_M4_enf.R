@@ -85,10 +85,56 @@ rm(list = c("vars_add_fa",
             "M4_enf_F0",
             "M4_enf_F1"))
   
+## 3.3.3 Remove duplicates ####
+common_vars <- union("id_link", intersect(names(M4_enf_F2), names(M1_V6)))
+vars_doublons <- union("id_link", setdiff(names(M4_enf_F2), common_vars))  
+
+doublons <- M4_enf_F2 %>% 
+  filter(is.na(id_date_creation))
   
-  
-  
-  
-  
-  
-  
+list_doublons <- unique(doublons$id_link)
+
+identity <- M1_V6 %>% 
+  filter(id_link %in% list_doublons) %>% 
+  select(all_of(common_vars))
+
+clean <- left_join(
+  doublons %>% 
+    select(all_of(vars_doublons)),
+  identity,
+  relationship = "many-to-many",
+  by = "id_link"
+) %>% 
+  slice(-1)
+
+ids_TPO <- unique(doublons$id_anonymat)
+
+M4_enf_F3 <- bind_rows(
+  M4_enf_F2 %>% 
+    filter(!id_anonymat %in% ids_TPO),
+  clean
+) %>% 
+  filter(fa_enfants_type == "P") %>% 
+  arrange(id_anonymat, nais_an, nais_mois, adopte_an, adopte_mois) %>% 
+  relocate(id_anonymat, nais_an, nais_mois, prenom, adopte_an, adopte_mois) %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+   # fa_enfants_date_creation = case_when(
+   #   n_distinct(fa_enfants_date_creation) > 1 ~ id_date_creation,
+   #   TRUE ~ fa_enfants_date_creation),
+    fa_enfants_cat = case_when(
+      n_distinct(fa_enfants_cat) > 1 ~ "fa_04_enfants_04",
+      TRUE ~ fa_enfants_cat
+    )) %>% 
+  ungroup()
+
+### Clean up
+rm(list = c("clean",
+            "doublons",
+            "identity",
+            "M4_enf_F2",
+            "common_vars",
+            "ids_TPO",
+            "list_doublons",
+            "vars_doublons"))
+
