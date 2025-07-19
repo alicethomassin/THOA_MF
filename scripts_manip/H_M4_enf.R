@@ -126,6 +126,10 @@ M4_enf_F3 <- bind_rows(
       n_distinct(fa_enfants_cat) > 1 ~ "fa_04_enfants_04",
       TRUE ~ fa_enfants_cat
     )) %>% 
+  mutate(an_arrivee = case_when(
+    is.na(adopte_an) ~ nais_an,
+    TRUE ~ adopte_an
+  )) %>% 
   ungroup()
 
 ### Clean up
