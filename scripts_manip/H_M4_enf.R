@@ -142,3 +142,43 @@ rm(list = c("clean",
             "list_doublons",
             "vars_doublons"))
 
+## 3.3.4 Événements distincts ####
+test_event <- M4_enf_F3 %>% 
+  group_by(id_anonymat, an_arrivee, prenom) %>%
+  mutate(n_comb = n()) %>% 
+  filter(n_comb > 1) %>% 
+  arrange(id_anonymat, an_arrivee) %>%
+  relocate(id_anonymat, an_arrivee, prenom, conjt_prenom) %>% 
+  ungroup()
+
+ids_verif <- unique(test_event$id_anonymat)
+
+verif <- M4_enf_F3 %>% 
+  filter(id_anonymat %in% ids_verif) %>% 
+  arrange(id_anonymat, an_arrivee) %>%
+  relocate(id_anonymat, fa_enf_bio_nb, fa_enf_adopte_nb, an_arrivee, prenom, conjt_prenom) %>% 
+  ungroup() %>% 
+  slice(c(2, 4, ))
+
+conjt <- M1_V6 %>% 
+  filter(id_anonymat %in% ids_verif) %>% 
+  select(id_anonymat, fa_cpl_nb, fa_cpl01_conjt_enf, fa_cpl01_conjt_prenom, fa_cpl01_conjt_union_an, fa_cpl01_int_an)
+
+vars_couple <- M1_V6 %>% 
+  select(all_of(starts_with("fa_cpl0"))) %>% 
+  colnames()
+
+JNDTO <- M1_V6 %>%
+  filter(id_anonymat == "JNDTO") %>% 
+  mutate(across(starts_with("fa_cpl0"), as.character)) %>% 
+  pivot_longer(
+    cols = starts_with("fa_cpl0"),
+    names_to = c("rang_couple", "variable"),
+    names_pattern = "fa_cpl(\\d{2})_(.+)",
+    values_to = "valeur"
+) %>% 
+  pivot_wider(
+    names_from = variable,
+    values_from = valeur) %>% 
+  arrange(id_anonymat, rang_couple) %>% 
+  relocate(rang_couple, all_of(starts_with("conjt")))
