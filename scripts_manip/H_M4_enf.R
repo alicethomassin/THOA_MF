@@ -126,11 +126,16 @@ M4_enf_F3 <- bind_rows(
       n_distinct(fa_enfants_cat) > 1 ~ "fa_04_enfants_04",
       TRUE ~ fa_enfants_cat
     )) %>% 
-  mutate(an_arrivee = case_when(
-    is.na(adopte_an) ~ nais_an,
-    TRUE ~ adopte_an
-  )) %>% 
-  ungroup()
+  mutate(
+    arrivee_an = case_when(
+      is.na(adopte_an) ~ nais_an,
+      TRUE ~ adopte_an),
+    arrivee_mois = case_when(
+      is.na(adopte_mois) ~ nais_mois,
+      TRUE ~ adopte_mois
+    )) %>% 
+  ungroup() %>% 
+  filter(!is.na(arrivee_an)) # Il y a 120 naissances
 
 ### Clean up
 rm(list = c("clean",
@@ -144,22 +149,36 @@ rm(list = c("clean",
 
 ## 3.3.4 Événements distincts ####
 test_event <- M4_enf_F3 %>% 
-  group_by(id_anonymat, an_arrivee, prenom) %>%
+  group_by(id_anonymat, arrivee_an, prenom) %>%
   mutate(n_comb = n()) %>% 
   filter(n_comb > 1) %>% 
-  arrange(id_anonymat, an_arrivee) %>%
-  relocate(id_anonymat, an_arrivee, prenom, conjt_prenom) %>% 
   ungroup()
 
 ids_verif <- unique(test_event$id_anonymat)
 
 verif <- M4_enf_F3 %>% 
   filter(id_anonymat %in% ids_verif) %>% 
-  arrange(id_anonymat, an_arrivee) %>%
-  relocate(id_anonymat, fa_enf_bio_nb, fa_enf_adopte_nb, an_arrivee, prenom, conjt_prenom) %>% 
-  ungroup() %>% 
-  slice(c(2, 4, ))
+  arrange(id_anonymat, arrivee_an) %>%
+  relocate(id_anonymat, fa_enf_bio_nb, fa_enf_adopte_nb, issu, etat_mat, arrivee_an, prenom, conjt_prenom) %>% 
+  ungroup()
 
+clean <- verif %>%
+  slice(c(2, 4, 8)) 
+
+M4_enf_F4 <- bind_rows(
+  M4_enf_F3 %>% 
+    filter(!id_anonymat %in% ids_verif),
+  clean
+) %>% 
+  arrange(id_anonymat, arrivee_an, arrivee_mois)
+
+### Clean up
+rm(list = c("clean",
+            "test_event",
+            "verif",
+            "ids_verif"))
+
+#### Démarche identifier conjoints ####
 conjt <- M1_V6 %>% 
   filter(id_anonymat %in% ids_verif) %>% 
   select(id_anonymat, fa_cpl_nb, fa_cpl01_conjt_enf, fa_cpl01_conjt_prenom, fa_cpl01_conjt_union_an, fa_cpl01_int_an)
@@ -169,7 +188,7 @@ vars_couple <- M1_V6 %>%
   colnames()
 
 JNDTO <- M1_V6 %>%
-  filter(id_anonymat == "JNDTO") %>% 
+  filter(id_anonymat %in% verif$id_anonymat) %>% 
   mutate(across(starts_with("fa_cpl0"), as.character)) %>% 
   pivot_longer(
     cols = starts_with("fa_cpl0"),
@@ -181,4 +200,74 @@ JNDTO <- M1_V6 %>%
     names_from = variable,
     values_from = valeur) %>% 
   arrange(id_anonymat, rang_couple) %>% 
-  relocate(rang_couple, all_of(starts_with("conjt")))
+  relocate(id_anonymat, rang_couple, all_of(starts_with("conjt")),
+           all_of(starts_with("int_")),
+           union_nature) %>% 
+  filter(!is.na(conjt_nais_an))
+
+
+## 3.3.5 Identifier les naissances multiples ####
+
+vars_enfants <- M4_enf_F4 %>% 
+  select(-all_of(starts_with("fa_")),
+         -all_of(starts_with("id_"))) %>% 
+  colnames()
+
+M4_enf_F5 <- M4_enf_F4 %>% 
+  group_by(id_anonymat, arrivee_an, arrivee_mois) %>% 
+  mutate(fa_enf_par_nais = n()) %>% 
+  ungroup() %>% 
+  group_by(id_anonymat) %>% 
+  arrange(arrivee_an, arrivee_mois) %>% 
+  mutate(fa_enf_nb = n(),
+         rang_fa_enf = case_when(
+           fa_enf_nb == 1 ~ "fa_enf01",
+           TRUE ~ paste0("fa_enf", sprintf("%02d", row_number()))
+         )) %>% 
+  ungroup() %>% 
+  relocate(id_anonymat, fa_enf_adopte_nb, fa_enf_bio_nb, fa_enf_nb, fa_enf_par_nais, rang_fa_enf, all_of(vars_enfants))
+
+verif <- M4_enf_F5 %>% 
+  filter(fa_enf_bio_nb != fa_enf_nb)
+
+ids_verif <- unique(verif$id_anonymat)
+
+test_verif <- M4_enf_F5 %>% 
+  filter(id_anonymat %in% ids_verif) %>% 
+  arrange(id_anonymat, arrivee_an, arrivee_mois) %>% 
+  relocate(id_anonymat, fa_enf_adopte_nb, fa_enf_bio_nb, fa_enf_nb, fa_enf_par_nais, rang_fa_enf, all_of(vars_enfants))
+
+
+clean <- test_verif %>% 
+  slice(c(1,
+          3,4,
+          5,7,8,
+          9,
+          10,11,
+          12,13,
+          14,
+          15,
+          16,
+          17,
+          18,19,
+          20,21,
+          22)) %>% 
+  group_by(id_anonymat, arrivee_an, arrivee_mois) %>% 
+  mutate(fa_enf_par_nais = n()) %>% 
+  ungroup() %>% 
+  group_by(id_anonymat) %>% 
+  arrange(arrivee_an, arrivee_mois) %>% 
+  mutate(fa_enf_nb = n(),
+         rang_fa_enf = case_when(
+           fa_enf_nb == 1 ~ "fa_enf01",
+           TRUE ~ paste0("fa_enf", sprintf("%02d", row_number()))
+         )) %>% 
+  ungroup() %>% 
+  relocate(id_anonymat, fa_enf_adopte_nb, fa_enf_bio_nb, fa_enf_nb, fa_enf_par_nais, rang_fa_enf, all_of(vars_enfants))
+
+M4_enf_F6 <- bind_rows(
+  M4_enf_F5 %>% 
+    filter(!id_anonymat %in% ids_verif),
+  clean
+) %>% 
+  arrange(id_anonymat)
