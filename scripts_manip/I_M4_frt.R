@@ -10,7 +10,7 @@ M4_frt_F1 <- M4_frt_F0 %>%
   remove_empty("cols") %>% 
   select(-fratrie_pf_fratrie)
 
-## Rename cols ####
+## 3.4.2 Rename cols ####
 vars_add_fa <- M4_frt_F1 %>% 
   select(all_of(starts_with("fo_")),
          fratrie_date_creation,
@@ -90,8 +90,124 @@ rm(list = c("M4_frt_F0",
             "vars_fratrie",
             "vars_sub_sf"))
 
+## 3.3.3 Remove duplicates ####
+common_vars <- union("id_link", intersect(names(M4_frt_F2), names(M1_V7)))
+vars_doublons <- union("id_link", setdiff(names(M4_frt_F2), common_vars))  
 
+doublons <- M4_frt_F2 %>% 
+  filter(is.na(id_date_creation))
 
+list_doublons <- unique(doublons$id_link)
+
+identity <- M1_V7 %>% 
+  filter(id_link %in% list_doublons) %>% 
+  select(all_of(common_vars))
+
+clean <- left_join(
+  doublons %>% 
+    select(all_of(vars_doublons)),
+  identity,
+  relationship = "many-to-many",
+  by = "id_link"
+)
+
+## Verif doublons dans l'union
+vars_fratrie <- M4_frt_F2 %>% 
+  select(-all_of(starts_with("id_")),
+         -all_of(starts_with("fa_"))) %>% 
+  colnames()
+
+verif_clean <- bind_rows(
+  M4_frt_F2 %>% 
+    filter(id_anonymat %in% clean$id_anonymat),
+  clean,
+  .id = "source"
+) %>% 
+  arrange(id_anonymat, arrivee_an, arrivee_mois) %>% 
+  relocate(id_anonymat, source, id_date_nais, fa_rang_nais, 
+           arrivee_an, arrivee_mois, prenom, diag_avt_nais, muco, issu, 
+           fa_fratrie_bio_nb, fa_fratrie_demi_nb, all_of(vars_fratrie))
+
+corr <- verif_clean %>% 
+  slice(c(1,3,
+          5,7,9,
+          11,13,
+          15,
+          17,
+          19,
+          21:30,32,
+          33,35,37,39,
+          41,43,
+          45,
+          48,49,50,
+          53,54,
+          55,
+          56,
+          59,
+          60,62,64,66,68,70))
+
+ids_TPO <- unique(union(corr$id_anonymat, doublons$id_anonymat))
+
+M4_frt_F3 <- bind_rows(
+  M4_frt_F2 %>% 
+    filter(!id_anonymat %in% ids_TPO),
+  corr %>% 
+    select(-source)
+) %>% 
+  arrange(id_anonymat, arrivee_an, arrivee_mois) %>% 
+  relocate(id_anonymat, id_date_nais, fa_rang_nais, 
+           arrivee_an, arrivee_mois, prenom, diag_avt_nais, muco, issu, 
+           fa_fratrie_bio_nb, fa_fratrie_demi_nb, fa_fratrie_adopte_nb,
+           all_of(vars_fratrie)) %>% 
+  filter(!is.na(fa_fratrie_date_creation))
+
+### Clean up
+rm(list = c("common_vars",
+            "vars_doublons",
+            "doublons",
+            "list_doublons",
+            "identity",
+            "clean",
+            "verif_clean",
+            "corr",
+            "ids_TPO"))
+
+## 3.3.4 Événements distincts ####
+test_event <- M4_frt_F3 %>% 
+  group_by(id_anonymat, arrivee_an, prenom) %>%
+  mutate(n_comb = n()) %>% 
+  filter(n_comb > 1) %>% 
+  ungroup()
+
+rm(test_event)
+
+## 3.3.5 Identité unique ####
+
+vars_fratrie <- M4_frt_F3 %>% 
+  select(-all_of(starts_with("id_")),
+         -all_of(starts_with("fa_"))) %>% 
+  colnames()
+
+vars_fixe <- setdiff(setdiff(names(M4_frt_F3), vars_fratrie), "id_anonymat")
+
+test_identity_cols <- M4_frt_F3 %>% 
+  group_by(id_anonymat) %>% 
+  summarise(across(all_of(vars_fixe), ~ n_distinct(.) > 1)) %>% 
+  rowwise() %>% 
+  filter(sum(c_across(-id_anonymat)) > 0) %>% 
+  select(id_anonymat, where(~ !all(. == FALSE)))
+
+rm(list = c("vars_fratrie",
+            "vars_fixe",
+            "test_identity_cols"))
+
+## 3.3.6 Identifier le rang de la fratrie ####
+
+M4_frt_F3 %>%
+  group_by(id_anonymat) %>% 
+  summarise(nb_frt = n()) %>% 
+  summary(nb_frt) %>% 
+  view()
 
 
 
