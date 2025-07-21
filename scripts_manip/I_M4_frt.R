@@ -131,12 +131,9 @@ verif_clean <- bind_rows(
   .id = "source"
 ) %>% 
   arrange(id_anonymat, arrivee_an, arrivee_mois) %>% 
-  relocate(id_anonymat, source, id_date_nais, fa_rang_nais, 
+  relocate(id_anonymat, source, id_date_creation, fa_fratrie_date_creation, id_date_nais, fa_rang_nais, 
            arrivee_an, arrivee_mois, prenom, diag_avt_nais, muco, issu, 
            fa_fratrie_bio_nb, fa_fratrie_demi_nb, all_of(vars_fratrie))
-
-keep <- verif_clean %>% 
-  
 
 corr <- verif_clean %>% 
   slice(c(1,3,
@@ -145,7 +142,7 @@ corr <- verif_clean %>%
           15,
           17,
           19,
-          21:30,32,
+          21:31,
           33,35,37,39,
           41,43,
           45,
@@ -249,25 +246,32 @@ decede <- M4_frt_F4 %>%
   filter(decede == 1) %>% 
   relocate(id_anonymat, fa_frt_nb, rang_fa_frt, fa_frt_older, id_nais_an, arrivee_an, fa_commentaires) %>%
   arrange(id_anonymat, fa_frt_nb, rang_fa_frt) %>% 
-  filter(is.na(arrivee_an))
+  filter(is.na(rang_fa_frt))
 
 ids_verif <- unique(decede$id_anonymat)
 
 decedes <- M4_frt_F4 %>% 
   filter(id_anonymat %in% ids_verif) %>% 
-  relocate(id_anonymat, fa_frt_nb, rang_fa_frt, fa_frt_older, id_nais_an, arrivee_an, fa_commentaires) %>%
+  relocate(id_anonymat, fa_frt_nb, rang_fa_frt, fa_fratrie_demi_nb, 
+          fa_fratrie_adopte_nb,  fa_frt_older, id_nais_an, arrivee_an, fa_commentaires) %>%
   arrange(id_anonymat, fa_frt_nb, rang_fa_frt)
 
 decede_clean <- decedes %>% 
   mutate(
-    arrivee_an = case_when(
-      id_anonymat == "GCXSD" & is.na(arrivee_an) ~ 1943,
-      )
     fa_frt_older = case_when(
       id_anonymat == "GJLAU" ~ 1,
+      id_anonymat == "NHKVC" & is.na(fa_frt_older) ~ 1
+    ),
+    rang_fa_frt = case_when(
+      id_anonymat == "GJLAU" ~ "fa_frtO01"
+      id_anonymat == "NHKVC" & is.na(rang_fa_frt) ~ "fa_frtO03"
     )
   )
 
+# je ne sais pas quoi faire ici. Je vais arrêter et demander à Gil.
+# option A) choisir l'ordre de la fratrie par induction
+# option B) donner un ordre aléatoire
+# option C) les retirer pcq on peut pas traiter la fratrie avec les infos manquantes
 
 
 
