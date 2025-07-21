@@ -95,3 +95,17 @@ rm(list = c("common_vars",
             "doublons",
             "identity"))
 
+# K - M1_V10 ####
+common_vars <- intersect(names(M6_F3), names(M1_V9))
+
+verif_join <- anti_join(
+  M6_F3,
+  M1_V9,
+  by = common_vars
+) # le df est vide, on peut donc joindre les deux
+
+M1_V10 <- left_join(
+  M1_V9,
+  M6_F3,
+  by = common_vars
+)
