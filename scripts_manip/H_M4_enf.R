@@ -429,6 +429,6 @@ rm(list = c("M4_enf_F3",
             "common_vars",
             "vars_verif"))
 
-enf_commentaires <- M4_enf_W2 %>% 
-  filter(fa_commentaires != "") %>% 
-  relocate(fa_commentaires, id_anonymat, all_of(starts_with("fa_enf_nb")), all_of(starts_with("fa_enf0")))
+#enf_commentaires <- M4_enf_W2 %>% 
+#  filter(fa_commentaires != "") %>% 
+#  relocate(fa_commentaires, id_anonymat, all_of(starts_with("fa_enf_nb")), all_of(starts_with("fa_enf0")))
