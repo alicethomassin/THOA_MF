@@ -270,8 +270,8 @@ M4_enf_F6 <- bind_rows(
 ) 
 
 vars_nb_enf <- M4_enf_F6 %>%
-  select(id_anonymat, issu, arrivee_an, fa_enf_nb) %>% 
-  group_by(id_anonymat, arrivee_an, issu) %>% 
+  select(id_anonymat, issu, arrivee_an, fa_enf_nb, prenom) %>% 
+  group_by(id_anonymat, arrivee_an, prenom, issu) %>% 
   mutate(
     fa_enf_nb_nat = if_else(issu == "1", n(), 0L),
     fa_enf_nb_med = if_else(issu == "2", n(), 0L),
@@ -428,3 +428,7 @@ rm(list = c("M4_enf_F3",
             "verif_join",
             "common_vars",
             "vars_verif"))
+
+enf_commentaires <- M4_enf_W2 %>% 
+  filter(fa_commentaires != "") %>% 
+  relocate(fa_commentaires, id_anonymat, all_of(starts_with("fa_enf_nb")), all_of(starts_with("fa_enf0")))
