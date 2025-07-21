@@ -44,3 +44,54 @@ M6_F2 <- M6_F1 %>%
 rm(list = c("M6_F0",
             "M6_F1",
             "add_qv"))
+
+## 5.1.3 Remove duplicates ####
+common_vars <- union("id_link", intersect(names(M6_F2), names(M1_V9)))
+vars_doublons <- union("id_link", setdiff(names(M6_F2), common_vars))
+
+doublons <- M6_F2 %>% 
+  filter(is.na(id_date_creation)) %>% 
+  mutate(id_link = id_anonymat)
+
+list_doublons <- unique(doublons$id_link)
+
+identity <- M1_V9 %>% 
+  filter(id_link %in% list_doublons) %>% 
+  select(all_of(common_vars))
+
+clean <- left_join(
+  identity,
+  doublons %>% 
+    select(all_of(vars_doublons)),
+  by = "id_link"
+)
+
+ids_TPO <- union(clean$id_anonymat, clean$id_link)
+
+M6_F3 <- bind_rows(
+  M6_F2 %>% 
+    filter(!id_anonymat %in% ids_TPO),
+  clean %>% 
+    select(-id_link)
+) %>% 
+  arrange(id_anonymat) %>% 
+  separate(id_sep,
+           into = c("rid", "id_link"),
+           sep = "_",
+           remove = FALSE,
+           fill = "right") %>%
+  select(-rid) %>% 
+  mutate(id_link = case_when(
+    is.na(id_link) ~ id_anonymat,
+    TRUE ~ id_link
+  ))
+
+### Clean up
+rm(list = c("common_vars",
+            "ids_TPO",
+            "list_doublons",
+            "vars_doublons",
+            "clean",
+            "doublons",
+            "identity"))
+
