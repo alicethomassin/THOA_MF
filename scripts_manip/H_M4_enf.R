@@ -119,9 +119,6 @@ M4_enf_F3 <- bind_rows(
   relocate(id_anonymat, nais_an, nais_mois, prenom, adopte_an, adopte_mois) %>% 
   group_by(id_anonymat) %>% 
   mutate(
-   # fa_enfants_date_creation = case_when(
-   #   n_distinct(fa_enfants_date_creation) > 1 ~ id_date_creation,
-   #   TRUE ~ fa_enfants_date_creation),
     fa_enfants_cat = case_when(
       n_distinct(fa_enfants_cat) > 1 ~ "fa_04_enfants_04",
       TRUE ~ fa_enfants_cat
@@ -179,31 +176,31 @@ rm(list = c("clean",
             "ids_verif"))
 
 #### Démarche identifier conjoints ####
-conjt <- M1_V6 %>% 
-  filter(id_anonymat %in% ids_verif) %>% 
-  select(id_anonymat, fa_cpl_nb, fa_cpl01_conjt_enf, fa_cpl01_conjt_prenom, fa_cpl01_conjt_union_an, fa_cpl01_int_an)
-
-vars_couple <- M1_V6 %>% 
-  select(all_of(starts_with("fa_cpl0"))) %>% 
-  colnames()
-
-JNDTO <- M1_V6 %>%
-  filter(id_anonymat %in% verif$id_anonymat) %>% 
-  mutate(across(starts_with("fa_cpl0"), as.character)) %>% 
-  pivot_longer(
-    cols = starts_with("fa_cpl0"),
-    names_to = c("rang_couple", "variable"),
-    names_pattern = "fa_cpl(\\d{2})_(.+)",
-    values_to = "valeur"
-) %>% 
-  pivot_wider(
-    names_from = variable,
-    values_from = valeur) %>% 
-  arrange(id_anonymat, rang_couple) %>% 
-  relocate(id_anonymat, rang_couple, all_of(starts_with("conjt")),
-           all_of(starts_with("int_")),
-           union_nature) %>% 
-  filter(!is.na(conjt_nais_an))
+#conjt <- M1_V6 %>% 
+#  filter(id_anonymat %in% ids_verif) %>% 
+#  select(id_anonymat, fa_cpl_nb, fa_cpl01_conjt_enf, fa_cpl01_conjt_prenom, fa_cpl01_conjt_union_an, fa_cpl01_int_an)
+#
+#vars_couple <- M1_V6 %>% 
+#  select(all_of(starts_with("fa_cpl0"))) %>% 
+#  colnames()
+#
+#JNDTO <- M1_V6 %>%
+#  filter(id_anonymat %in% verif$id_anonymat) %>% 
+#  mutate(across(starts_with("fa_cpl0"), as.character)) %>% 
+#  pivot_longer(
+#    cols = starts_with("fa_cpl0"),
+#    names_to = c("rang_couple", "variable"),
+#    names_pattern = "fa_cpl(\\d{2})_(.+)",
+#    values_to = "valeur"
+#) %>% 
+#  pivot_wider(
+#    names_from = variable,
+#    values_from = valeur) %>% 
+#  arrange(id_anonymat, rang_couple) %>% 
+#  relocate(id_anonymat, rang_couple, all_of(starts_with("conjt")),
+#           all_of(starts_with("int_")),
+#           union_nature) %>% 
+#  filter(!is.na(conjt_nais_an))
 
 
 ## 3.3.5 Identifier les naissances multiples ####
@@ -215,7 +212,7 @@ vars_enfants <- M4_enf_F4 %>%
 
 M4_enf_F5 <- M4_enf_F4 %>% 
   group_by(id_anonymat, arrivee_an, arrivee_mois) %>% 
-  mutate(fa_enf_par_nais = n()) %>% 
+  mutate(nb_par_nais = n()) %>% 
   ungroup() %>% 
   group_by(id_anonymat) %>% 
   arrange(arrivee_an, arrivee_mois) %>% 
@@ -225,7 +222,7 @@ M4_enf_F5 <- M4_enf_F4 %>%
            TRUE ~ paste0("fa_enf", sprintf("%02d", row_number()))
          )) %>% 
   ungroup() %>% 
-  relocate(id_anonymat, fa_enf_adopte_nb, fa_enf_bio_nb, fa_enf_nb, fa_enf_par_nais, rang_fa_enf, all_of(vars_enfants))
+  relocate(id_anonymat, fa_enf_adopte_nb, fa_enf_bio_nb, fa_enf_nb, nb_par_nais, rang_fa_enf, all_of(vars_enfants))
 
 verif <- M4_enf_F5 %>% 
   filter(fa_enf_bio_nb != fa_enf_nb)
@@ -235,7 +232,7 @@ ids_verif <- unique(verif$id_anonymat)
 test_verif <- M4_enf_F5 %>% 
   filter(id_anonymat %in% ids_verif) %>% 
   arrange(id_anonymat, arrivee_an, arrivee_mois) %>% 
-  relocate(id_anonymat, fa_enf_adopte_nb, fa_enf_bio_nb, fa_enf_nb, fa_enf_par_nais, rang_fa_enf, all_of(vars_enfants))
+  relocate(id_anonymat, fa_enf_adopte_nb, fa_enf_bio_nb, fa_enf_nb, nb_par_nais, rang_fa_enf, all_of(vars_enfants))
 
 
 clean <- test_verif %>% 
@@ -253,7 +250,7 @@ clean <- test_verif %>%
           20,21,
           22)) %>% 
   group_by(id_anonymat, arrivee_an, arrivee_mois) %>% 
-  mutate(fa_enf_par_nais = n()) %>% 
+  mutate(nb_par_nais = n()) %>% 
   ungroup() %>% 
   group_by(id_anonymat) %>% 
   arrange(arrivee_an, arrivee_mois) %>% 
@@ -263,11 +260,171 @@ clean <- test_verif %>%
            TRUE ~ paste0("fa_enf", sprintf("%02d", row_number()))
          )) %>% 
   ungroup() %>% 
-  relocate(id_anonymat, fa_enf_adopte_nb, fa_enf_bio_nb, fa_enf_nb, fa_enf_par_nais, rang_fa_enf, all_of(vars_enfants))
+  relocate(id_anonymat, fa_enf_adopte_nb, fa_enf_bio_nb, fa_enf_nb, nb_par_nais, rang_fa_enf, all_of(vars_enfants))
+
 
 M4_enf_F6 <- bind_rows(
   M4_enf_F5 %>% 
     filter(!id_anonymat %in% ids_verif),
   clean
+) 
+
+vars_nb_enf <- M4_enf_F6 %>%
+  select(id_anonymat, issu, arrivee_an, fa_enf_nb) %>% 
+  group_by(id_anonymat, arrivee_an, issu) %>% 
+  mutate(
+    fa_enf_nb_nat = if_else(issu == "1", n(), 0L),
+    fa_enf_nb_med = if_else(issu == "2", n(), 0L),
+    fa_enf_nb_cjt = if_else(issu == "3", n(), 0L),
+    fa_enf_nb_adp = if_else(issu == "4", n(), 0L)
+  ) %>% 
+  ungroup() %>% 
+  arrange(fa_enf_nb, id_anonymat, arrivee_an)
+
+vars_nb_enf2 <- vars_nb_enf %>% 
+  group_by(id_anonymat) %>% 
+  summarise(
+    fa_enf_nb_nat = sum(fa_enf_nb_nat),
+    fa_enf_nb_med = sum(fa_enf_nb_med),
+    fa_enf_nb_cjt = sum(fa_enf_nb_cjt),
+    fa_enf_nb_adp = sum(fa_enf_nb_adp),
+    .groups = "drop"
+  ) %>% 
+  left_join(
+    M4_enf_F6 %>% 
+      select(id_anonymat, fa_enf_nb),
+    by = "id_anonymat") %>% 
+  arrange(fa_enf_nb, id_anonymat) %>% 
+  distinct()
+
+common_vars_enf <- intersect(names(vars_nb_enf2), names(M4_enf_F6))
+
+M4_enf_F7 <- left_join(
+  M4_enf_F6,
+  vars_nb_enf2,
+  by = common_vars_enf,
+  relationship = "many-to-many"
+)
+
+
+
+## 3.3.6 Identité unique ####
+vars_wider <- M4_enf_F7 %>% 
+  select(-all_of(starts_with("fa_")),
+         -all_of(starts_with("id_"))) %>% 
+  colnames()
+
+vars_fixe <- setdiff(setdiff(names(M4_enf_F7), vars_wider), "id_anonymat")
+
+test_identity_cols <- M4_enf_F7 %>% 
+  group_by(id_anonymat) %>% 
+  summarise(across(all_of(vars_fixe), ~ n_distinct(.) > 1)) %>% 
+  rowwise() %>% 
+  filter(sum(c_across(-id_anonymat)) > 0) %>% 
+  select(id_anonymat, where(~ !all(. == FALSE)))
+
+## 3.3.7 Lignes uniques ####
+vars_wider <- M4_enf_F7 %>% 
+  select(-all_of(starts_with("fa_")),
+         -all_of(starts_with("id_")),
+         -rang_fa_enf) %>% 
+  colnames()
+
+M4_enf_W1 <- M4_enf_F7 %>% 
+  pivot_wider(
+    names_from = rang_fa_enf,
+    values_from = all_of(vars_wider),
+    names_glue = "{rang_fa_enf}_{.value}"
+  )
+
+### Clean up
+rm(list = c("clean",
+            "test_identity_cols",
+            "test_verif",
+            "vars_nb_enf",
+            "vars_nb_enf2",
+            "verif",
+            "common_vars_enf",
+            "ids_verif",
+            "vars_enfants",
+            "vars_fixe",
+            "vars_wider"))
+
+# H - M1_V7 ####
+common_vars <- intersect(names(M4_enf_W1), names(M1_V6))
+
+verif_join <- anti_join(
+  M4_enf_W1,
+  M1_V6,
+  by = common_vars
+)
+
+# Réunir tous les individus et les variables concernés
+comparaison <- bind_rows(
+  M4_enf_W1 %>% 
+    filter(id_anonymat %in% verif_join$id_anonymat) %>%
+    select(all_of(common_vars)),
+  M1_V6 %>% 
+    filter(id_anonymat %in% verif_join$id_anonymat) %>%
+    select(all_of(common_vars)),
+  .id = "source"
 ) %>% 
   arrange(id_anonymat)
+
+# Obtenir le nom des variables problématiques
+test_identity_cols <- comparaison %>% 
+  group_by(id_anonymat) %>% 
+  summarise(across(all_of(setdiff(common_vars, "id_anonymat")), ~ n_distinct(.) > 1)) %>% 
+  rowwise() %>% 
+  filter(sum(c_across(-id_anonymat)) > 0) %>% 
+  select(id_anonymat, where(~ !all(. == FALSE)))
+
+vars_verif <- colnames(test_identity_cols)
+
+matrim_verif <- bind_rows(
+  M4_enf_W1 %>% 
+    filter(id_anonymat %in% verif_join$id_anonymat) %>% 
+    select(all_of(vars_verif)),
+  M1_V6 %>% 
+    filter(id_anonymat %in% verif_join$id_anonymat) %>% 
+    select(all_of(vars_verif)),
+  .id = "source"
+) %>% 
+  arrange(id_anonymat, source)
+
+M4_enf_W2 <- left_join(
+  M4_enf_W1 %>% 
+    select(-fa_matrimoniale),
+  M1_V6 %>% 
+    filter(id_anonymat %in% M4_enf_W1$id_anonymat) %>% 
+    select(id_anonymat, fa_matrimoniale),
+  by = "id_anonymat"
+)
+
+# Deuxieme fois
+verif_join <- anti_join(
+  M4_enf_W2,
+  M1_V6,
+  by = common_vars
+) # le df est vide
+
+M1_V7 <- left_join(
+  M1_V6,
+  M4_enf_W2,
+  by = common_vars
+)
+
+### CLean up 
+rm(list = c("M4_enf_F3",
+            "M4_enf_F4",
+            "M4_enf_F5",
+            "M4_enf_F6",
+            "M4_enf_F7",
+            "M4_enf_W1",
+            "M4_enf_W2",
+            "comparaison",
+            "matrim_verif",
+            "test_identity_cols",
+            "verif_join",
+            "common_vars",
+            "vars_verif"))
