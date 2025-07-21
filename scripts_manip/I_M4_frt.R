@@ -69,10 +69,18 @@ M4_frt_F2 <- M4_frt_F1 %>%
     is.na(id_link) ~ id_anonymat,
     TRUE ~ id_link
   )) %>% 
-  mutate(id_date_nais = case_when(
-    id_anonymat %in% id_DDN ~ DDN,
-    TRUE ~ id_date_nais
-  ))
+  mutate(
+    id_date_nais = case_when(
+      id_anonymat %in% id_DDN ~ DDN,
+      TRUE ~ id_date_nais),
+    arrivee_an = case_when(
+      is.na(adopte_an) ~ nais_an,
+      TRUE ~ adopte_an),
+    arrivee_mois = case_when(
+      is.na(adopte_mois) ~ nais_mois,
+      TRUE ~ adopte_mois
+    )) %>% 
+  ungroup()
 
 ### Clean up
 rm(list = c("M4_frt_F0",
@@ -81,3 +89,19 @@ rm(list = c("M4_frt_F0",
             "vars_sub_pf",
             "vars_fratrie",
             "vars_sub_sf"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
