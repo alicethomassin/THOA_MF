@@ -80,3 +80,21 @@ rm(list = c("common_vars",
             "doublons",
             "identity"))
 
+# J - M1_V9 ####
+common_vars <- intersect(names(M5_F3), names(M1_V7))
+
+verif_join <- anti_join(
+  M5_F3,
+  M1_V7,
+  by = common_vars
+) # Le df est vide on peut donc joindre les deux
+
+M1_V9 <- left_join(
+  M1_V7,
+  M5_F3,
+  by = common_vars
+)
+
+### Clean up 
+rm(list = c("common_vars",
+            "verif_join"))
