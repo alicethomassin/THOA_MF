@@ -73,12 +73,19 @@ M4_frt_F2 <- M4_frt_F1 %>%
     id_date_nais = case_when(
       id_anonymat %in% id_DDN ~ DDN,
       TRUE ~ id_date_nais),
+    nais_an = case_when(
+      is.na(nais_an) & deces_an == 2003 ~ 1943,
+      TRUE ~ nais_an),
     arrivee_an = case_when(
-      is.na(adopte_an) ~ nais_an,
-      TRUE ~ adopte_an),
+      !is.na(adopte_an) ~ adopte_an,
+      !is.na(nais_an) ~ nais_an,
+      !is.na(deces_an) ~ deces_an,
+      TRUE ~ NA_integer_),
     arrivee_mois = case_when(
-      is.na(adopte_mois) ~ nais_mois,
-      TRUE ~ adopte_mois
+      !is.na(adopte_mois) ~ adopte_mois,
+      !is.na(nais_mois) ~ nais_mois,
+      !is.na(deces_mois) ~ deces_mois,
+      TRUE ~ NA_integer_
     )) %>% 
   ungroup()
 
@@ -127,6 +134,9 @@ verif_clean <- bind_rows(
   relocate(id_anonymat, source, id_date_nais, fa_rang_nais, 
            arrivee_an, arrivee_mois, prenom, diag_avt_nais, muco, issu, 
            fa_fratrie_bio_nb, fa_fratrie_demi_nb, all_of(vars_fratrie))
+
+keep <- verif_clean %>% 
+  
 
 corr <- verif_clean %>% 
   slice(c(1,3,
@@ -209,12 +219,54 @@ M4_frt_F3 %>%
   summary(nb_frt) %>% 
   view()
 
+M4_frt_F4 <- M4_frt_F3 %>% 
+  mutate(id_nais_an = year(id_date_nais),
+         id_nais_mois = month(id_date_nais)) %>%
+  group_by(id_anonymat) %>% 
+  arrange(arrivee_an, arrivee_mois) %>% 
+  mutate(
+    fa_frt_nb = n(),
+    fa_frt_older = case_when(
+      arrivee_an < id_nais_an | deces_an < id_nais_an ~ 1,
+      arrivee_an > id_nais_an | deces_an > id_nais_an ~ 0)) %>% 
+  group_by(id_anonymat, fa_frt_older) %>% 
+  arrange(arrivee_an, arrivee_mois) %>% 
+  mutate(
+    rang_fa_frt = case_when(
+      fa_frt_nb == 1 & fa_frt_older == 1 ~ "fa_frtO01",
+      fa_frt_nb == 1 & fa_frt_older == 0 ~ "fa_frtY01",
+      fa_frt_older == 1 ~ paste0("fa_frtO", sprintf("%02d", row_number())),
+      fa_frt_older == 0 ~ paste0("fa_frtY", sprintf("%02d", row_number()))
+    )
+  )
 
+M4_frt_F4 %>% 
+  relocate(id_anonymat, fa_commentaires, fa_frt_nb, rang_fa_frt, fa_frt_older, id_nais_an, arrivee_an) %>% 
+  arrange(id_anonymat, fa_frt_nb, rang_fa_frt) %>% 
+  view()
 
+decede <- M4_frt_F4 %>% 
+  filter(decede == 1) %>% 
+  relocate(id_anonymat, fa_frt_nb, rang_fa_frt, fa_frt_older, id_nais_an, arrivee_an, fa_commentaires) %>%
+  arrange(id_anonymat, fa_frt_nb, rang_fa_frt) %>% 
+  filter(is.na(arrivee_an))
 
+ids_verif <- unique(decede$id_anonymat)
 
+decedes <- M4_frt_F4 %>% 
+  filter(id_anonymat %in% ids_verif) %>% 
+  relocate(id_anonymat, fa_frt_nb, rang_fa_frt, fa_frt_older, id_nais_an, arrivee_an, fa_commentaires) %>%
+  arrange(id_anonymat, fa_frt_nb, rang_fa_frt)
 
-
+decede_clean <- decedes %>% 
+  mutate(
+    arrivee_an = case_when(
+      id_anonymat == "GCXSD" & is.na(arrivee_an) ~ 1943,
+      )
+    fa_frt_older = case_when(
+      id_anonymat == "GJLAU" ~ 1,
+    )
+  )
 
 
 
