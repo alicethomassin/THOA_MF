@@ -109,3 +109,11 @@ M1_V10 <- left_join(
   M6_F3,
   by = common_vars
 )
+
+### Clean up
+rm(list = c("common_vars",
+            "verif_join"))
+
+write.csv(M1_V10, "../clean_data/thoa_MV10.csv", row.names = F)
+
+data <- read.csv("../clean_data/thoa_MV10.csv")
