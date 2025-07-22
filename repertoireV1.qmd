@@ -1,0 +1,44 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+toc: true
+toc-location: left
+---
+
+```{r setup}
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+
+df <- read.csv("../clean_data/thoa_MV10.csv")
+```
+
+```{r fonction_resume}
+
+create_data_dictionary <- function(df) {
+  tibble(
+    variable = names(df),
+    type = map_chr(df, ~ class(.x)[1]),
+    n_unique = map_int(df, ~ n_distinct(.x, na.rm = TRUE)),
+    n_NA = map_int(df, ~sum(is.na(.x))),
+    exemple_valeur = map_chr(df, ~ {
+      val <- .x[!is.na(.x)]
+      if (length(val) == 0) return("NA")
+      paste0(unique(val)[1:min(3, length(unique(val)))], collapse = ", ")
+    }),
+    valeurs_possibles = map_chr(df, ~{
+      val <- unique(.x)
+      val <- val[!is.na(val)]
+      if (length(val) <= 26) paste(val, collapse = ", ") else "Trop de valeurs"
+    })
+  )
+}
+
+
+dico_df <- create_data_dictionary(df)
+
+dico_df %>%
+  kable(caption = "Dictionnaire de la base de données", align = "l") %>%
+  kable_styling(full_width = FALSE)
+```
