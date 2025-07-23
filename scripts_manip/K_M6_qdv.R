@@ -110,10 +110,34 @@ M1_V10 <- left_join(
   by = common_vars
 )
 
+
+## finale remove empty cols ####
+
+M1_V11 <- M1_V10 %>% 
+  remove_empty("cols")
+
+write.csv(M1_V11, "../clean_data/thoa_MV11.csv", row.names = F)
+
 ### Clean up
 rm(list = c("common_vars",
-            "verif_join"))
+            "verif_join",
+            "M1_V0",
+            "M1_V1",
+            "M1_V2",
+            "M1_V3",
+            "M1_V4",
+            "M1_V5",
+            "M1_V6",
+            "M1_V7",
+            "M1_V9",
+            "M1_V10",
+            "M1_V11",
+            "YUVJT",
+            "DDN",
+            "id_DDN",
+            "M6_F2",
+            "M6_F3",
+            "M4_F4"))
 
-write.csv(M1_V10, "../clean_data/thoa_MV10.csv", row.names = F)
 
-data <- read.csv("../clean_data/thoa_MV10.csv")
+
