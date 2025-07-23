@@ -14,63 +14,8 @@ library(knitr)
 library(kableExtra)
 library(DT)
 
-df <- read.csv("../clean_data/thoa_MV10.csv")
-```
-
-```{r}
-#| echo: false
-#| include: false
-create_data_dictionary2 <- function(df) {
-  
-  # Fonction pour détecter si une variable doit afficher min-max
-  needs_min_max <- function(var_name) {
-    str_detect(var_name, "_date_") |
-      str_starts(var_name, "id_centre") |
-      (str_detect(var_name, "dep") & !str_detect(var_name, "id_"))|
-      str_detect(var_name, "_age") |
-      str_detect(var_name, "_an")
-  }
-
-  # Résumé
-  tibble(
-    variable = names(df),
-    classe = map_chr(df, ~ class(.x)[1]),
-    n_unique = map_int(df, ~ n_distinct(.x, na.rm = TRUE)),
-    n_NA = map_int(df, ~ sum(is.na(.x))),
-    
-    
-    exemple_valeur = map_chr(df, ~ {
-      val <- .x[!is.na(.x)]
-      if (length(val) == 0) return("NA")
-      paste0(unique(val)[1:min(3, length(unique(val)))], collapse = ", ")
-    }),
-    
-    
-    valeurs_possibles = pmap_chr(list(names(df), df), function(var_name, var_data) {
-      val <- unique(var_data)
-      val <- val[!is.na(val)]
-      if (length(val) <= 5) {
-        paste(val, collapse = ", ")
-      } else if (needs_min_max(var_name)) {
-        # Convertir si c'est un caractère représentant une date
-        if (str_detect(var_name, "_date_")) {
-          suppressWarnings({
-            val <- as.Date(val)
-          })
-        }
-        if (all(is.na(val))) return("min: NA / max: NA")
-        paste0("min: ", min(val, na.rm = TRUE), " / max: ", max(val, na.rm = TRUE))
-      } else {
-        "Trop de valeurs"
-      }
-    })
-  )
-}
-
-dico2_df <- create_data_dictionary2(df)
-
-datatable(dico2_df, options = list(pageLength = 25), caption = "Dictionnaire interactif")
-
+data <- read.csv("../clean_data/thoa_MV11.csv") %>% 
+  select(order(colnames(.)))
 ```
 
 ```{r}
@@ -79,10 +24,12 @@ dictionaire <- function(df){
   
   variables_names <- names(df)
   
+  
   dico3_df <- tibble(
     variable = variables_names,
     classe = map_chr(df, ~ class(.x)[1]),
     n_unique = map_int(df, ~ n_distinct(.x, na.rm = TRUE)),
+    n_complete = map_int(df, ~ sum(!is.na(.x))),
     n_NA = map_int(df, ~ sum(is.na(.x))),
     data = map(df, ~ .x)
   ) %>% 
@@ -114,7 +61,7 @@ dictionaire <- function(df){
       valeurs_possibles = pmap_chr(list(variable, data, afficher_min_max), function(nom, colonne, afficher_min_max) {
         val <- unique(colonne[!is.na(colonne)])
         if (length(val) <= 27) {
-          return(paste(val, collapse = ", "))
+          return(paste(val, collapse = ";"))
         } else if (afficher_min_max) {
           # Convertir les dates si besoin
           if (str_detect(nom, "_date_")) {
@@ -123,69 +70,87 @@ dictionaire <- function(df){
             })
           }
           if (all(is.na(val))) return("min: NA / max: NA")
-          return(paste0("min: ", min(val, na.rm = TRUE), " / max: ", max(val, na.rm = TRUE)))
+          return(paste0(min(val, na.rm = TRUE), ":", max(val, na.rm = TRUE)))
         } else {
           return("Trop de valeurs")
         }
       })
     ) %>%
     # Retirer la colonne data (qui contenait les colonnes)
-    select(variable, classe, n_unique, n_NA, exemple_valeur, valeurs_possibles)
+    select(variable, classe, n_unique, n_NA, n_complete, exemple_valeur, valeurs_possibles)
   
   return(dico3_df)
 }
 
-dico3_df <- dictionaire(df)
+dico3_df <- dictionaire(data)
 
 datatable(dico3_df, options = list(pageLength = 25), caption = "Dictionnaire interactif")
 ```
 
-```{r fonction_resume}
-#| echo: false
-#| include: false
-create_data_dictionary <- function(df) {
-  tibble(
-    variable = names(df),
-    type = map_chr(df, ~ class(.x)[1]),
-    n_unique = map_int(df, ~ n_distinct(.x, na.rm = TRUE)),
-    n_NA = map_int(df, ~sum(is.na(.x))),
-    exemple_valeur = map_chr(df, ~ {
-      val <- .x[!is.na(.x)]
-      if (length(val) == 0) return("NA")
-      paste0(unique(val)[1:min(3, length(unique(val)))], collapse = ", ")
-    }),
-    valeurs_possibles = map_chr(df, ~{
-      val <- unique(.x)
-      val <- val[!is.na(val)]
-      if (length(val) <= 26) paste(val, collapse = ", ") else "Trop de valeurs"
-    })
-  )
-}
-
-
-dico_df <- create_data_dictionary(df)
-
-#dico_df %>%
-#  kable(caption = "Dictionnaire de la base de données", align = "l") %>%
-#  kable_styling(full_width = FALSE)
-
-
-datatable(dico_df, options = list(pageLength = 25), caption = "Dictionnaire interactif")
-
-```
-
 ```{r}
 
-df_na <- df %>% 
-  mutate(across(
-    .cols = where(is.character),
-    .fns = ~ na_if(., "")
-  ))
+#| echo: false
+dictionaire <- function(df){
+  
+  variables_names <- names(df)
+  
+  
+  dico3_df <- tibble(
+    variable = variables_names,
+    classe = map_chr(df, ~ class(.x)[1]),
+    n_unique = map_int(df, ~ n_distinct(.x, na.rm = TRUE)),
+    n_complete = map_int(df, ~ sum(!is.na(.x))),
+    n_NA = map_int(df, ~ sum(is.na(.x))),
+    data = map(df, ~ .x)
+  ) %>% 
+    
+    mutate(
+      afficher_min_max = case_when(
+        str_detect(variable, "_date_") ~ TRUE,
+        str_starts(variable, "id_centre") ~ TRUE,
+        str_detect(variable, "dep") ~ TRUE,
+        str_detect(variable, "_age") ~ TRUE,
+        str_detect(variable, "_an") & !str_detect(variable, "id_anonymat") ~ TRUE,
+        str_detect(variable, "_nais_") ~ TRUE,
+        TRUE ~ FALSE
+      )
+    ) %>% 
+    
+    mutate(
+      exemple_valeur = case_when(
+        str_detect(variable, "commentaires")  | str_detect(variable, "_autre") ~ "Non affiché",
+        TRUE ~ map_chr(data, function(x) {
+          val <- x[!is.na(x)]
+          if (length(val) == 0) return("NA")
+          paste0(unique(val)[1:min(3, length(unique(val)))], collapse = ", ")
+          })
+        )
+    ) %>%
+    
+    mutate(
+      valeurs_possibles = pmap_chr(list(variable, data, afficher_min_max), function(nom, colonne, afficher_min_max) {
+        val <- unique(colonne[!is.na(colonne)])
+        if (length(val) <= 27) {
+          return(paste(val, collapse = ";"))
+        } else if (afficher_min_max) {
+          # Convertir les dates si besoin
+          if (str_detect(nom, "_date_")) {
+            suppressWarnings({
+              val <- as.Date(val)
+            })
+          }
+          if (all(is.na(val))) return("min: NA / max: NA")
+          return(paste0(min(val, na.rm = TRUE), ":", max(val, na.rm = TRUE)))
+        } else {
+          return("Trop de valeurs")
+        }
+      })
+    ) %>%
+    # Retirer la colonne data (qui contenait les colonnes)
+    select(variable, classe, n_unique, n_NA, n_complete, exemple_valeur, valeurs_possibles)
+  
+  return(dico3_df)
+}
 
-empty_cols <- df_na %>% 
-  summarise(across(everything(), ~ sum(is.na(.)))) %>% 
-  pivot_longer(everything(),
-               names_to =  "variable",
-               values_to = "nb_empty_cells") %>% 
-  filter(nb_empty_cells == nrow(df_na))
+dico3_df <- dictionaire(data)
 ```
