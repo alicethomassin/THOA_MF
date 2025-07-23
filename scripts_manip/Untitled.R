@@ -1,3 +1,4 @@
 library(dataMaid)
 
-dataMaid::makeCodebook(df)
+dataMaid::makeCodebook(data)
+
