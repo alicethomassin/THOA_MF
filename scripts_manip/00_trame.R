@@ -117,16 +117,16 @@ M2_rdb_F0 <- read_sas("../raw_data/gb_ddb_sc_02_rdb_02.sas7bdat")
 
 ## 1.2.1 Rename cols ####
 
-cols_fa <- M2_rdb_F0 %>% 
-  select(all_of(starts_with("fa_"))) %>% 
+cols_fa <- M2_rdb_F0 %>%
+  select(all_of(starts_with("fa_"))) %>%
   colnames()
 
-cols_ps <- M2_rdb_F0 %>% 
-  select(all_of(starts_with("ps_"))) %>% 
+cols_ps <- M2_rdb_F0 %>%
+  select(all_of(starts_with("ps_"))) %>%
   colnames()
 
-cols_rdb <- M2_rdb_F0 %>% 
-  select(all_of(starts_with("rdb_")), -rdb_ps_redoubl) %>% 
+cols_rdb <- M2_rdb_F0 %>%
+  select(all_of(starts_with("rdb_")), -rdb_ps_redoubl) %>%
   colnames()
 
 cols_rd <- M2_rdb_F0 %>% 
