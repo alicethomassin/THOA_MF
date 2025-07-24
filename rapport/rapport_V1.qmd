@@ -1,0 +1,12 @@
+---
+title: "rapport_V1"
+format: 
+  typst:
+    template-partials:
+      - typst-show.typ
+      - typst-template.typ
+---
+
+# Codebook
+
+blablabla
