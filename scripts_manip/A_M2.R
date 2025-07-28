@@ -34,7 +34,8 @@ M2_F2 <- M2_F1 %>%
   rename_with(~ gsub("^fa_", "sc_", .x), all_of(cols_fa)) %>% 
   rename_with(~ gsub("^ps_", "sc_", .x), all_of(cols_ps)) %>% 
   rename("id_tab_db" = "tab_db",
-         "sc_commentaires" = "commentaires_scol")
+         "sc_commentaires" = "commentaires_scol",
+         "sc_id_cat" = "id_sc_cat")
 
 ### Clean up
 rm(list = c("cols_fa",
