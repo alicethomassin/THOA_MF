@@ -109,3 +109,5 @@ rm(list = c("ids_TPO",
             "vars_doublons",
             "vars_identity",
             "M2_F3"))
+
+# Réduire vars_PPS ####
