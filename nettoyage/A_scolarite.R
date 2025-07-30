@@ -71,14 +71,6 @@ find_identity <- function(df){
       str_ends(
         id_sep, regex(paste0(list_doublons, collapse = "|"))))
 }
-
-#identity <- M2_F1 %>% 
-#  find_identity(.) %>% 
-#  separate(id_sep,
-#           into = c("rid", "id_link"),
-#           sep = "_",
-#           remove = FALSE) %>% 
-#  select(-rid)
   
 identity <- M2_F1 %>% 
   filter(id_link %in% list_doublons,
@@ -120,6 +112,87 @@ rm(list = c("clean",
             "vars_identity"))
 
 ## 1.3 recoder variables ####
+
+vars_int <- M2_F2 %>% 
+  select(
+    id_centre1, id_centre2, id_centre3, id_dep_nais, id_lieu_nais, id_sexe,
+    id_age, id_tab_db, sc_diplome_an, sc_diplome, sc_fin_etudes, sc_formation,
+    sc_debut_an, sc_debut, sc_interromp, sc_redoubl, sc_debut_corr, 
+    sc_debut_age, sc_diplome_age, starts_with("sc_plan"), -sc_plan_notification_autre) %>% 
+  colnames()
+
+vars_choix_multiple <- M2_F2 %>% 
+  select(starts_with("sc_plan_ets"),
+         starts_with("sc_plan_notifi"),
+         -sc_plan_notification_autre) %>% 
+  colnames()
+
+vars_ets <- M2_F2 %>% 
+  select(starts_with("sc_plan_ets")) %>% 
+  names()
+
+classe_index <- as.integer(str_extract(vars_ets, "\\d+$"))
+
+recode_year <- function(df, borne, var_year){
+  
+  df %>% 
+    mutate(
+      {{var_year}} := case_when(
+        {{borne}} == 1 & is.na({{var_year}}) ~ 1000L,
+        {{borne}} == 0 | {{borne}} > 1 ~ 777L,
+        is.na({{borne}}) ~ NA_integer_,
+        TRUE ~ {{var_year}}
+      )
+    )
+}
+
+recode_qcm <- function(df, borne, list_vars){
+  
+  df %>% 
+    mutate(
+      across(
+        .cols = all_of( {{list_vars}} ),
+        .fns = ~ case_when(
+          {{borne}} == 1 & is.na(.) ~ 0L,
+          {{borne}} == 0 | {{borne}} > 1 ~ 777L,
+          is.na({{borne}}) ~ NA_integer_,
+          TRUE ~ .
+        )
+      )
+    )
+  
+}
+
+M2_F3 <- M2_F2 %>%
+  mutate(
+    across(
+      .cols = all_of(vars_int),
+      .fns = ~ as.integer(.)
+    )) %>%
+  mutate(
+    sc_plan_classe = case_when(
+      sc_plan == 0 ~ 777L,
+      is.na(sc_plan) ~ NA_integer_,
+      sc_plan == 1 ~ pmap_int(
+        .l = select(., all_of(vars_ets)),
+        .f = function(...) {
+          row <- c(...)  # transforme les arguments en vecteur ligne
+          first_class <- classe_index[which(row == 1)]
+          if (length(first_class) == 0) NA_integer_ else min(first_class)
+        }
+      )
+    ),
+    sc_plan_nb = case_when(
+      sc_plan == 1 ~ as.integer(rowSums(select(., all_of(vars_ets)) == 1, na.rm = T)),
+      sc_plan == 0 ~ 777L,
+      is.na(sc_plan) ~ NA_integer_
+    )) %>% 
+  recode_year(sc_plan, sc_plan_an) %>%
+  recode_qcm(sc_plan, vars_choix_multiple)
+  
+verif <- M2_F3 %>% 
+  relocate(sc_type, sc_plan, sc_plan_classe, sc_plan_nb, sc_plan_an, sc_plan_demande, all_of(vars_choix_multiple))
+
 
 
 
