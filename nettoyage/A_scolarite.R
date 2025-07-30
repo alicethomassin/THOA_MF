@@ -6,6 +6,26 @@ library(haven)
 library(questionr)
 
 # 1. SCOLARITÉ ####
+
+# Fonction pour créer variable de lien pour les doublons
+make_id_link <- function(df){
+  
+  df %>%
+    separate(id_sep,
+             into = c("rid", "id_link"),
+             sep = "_",
+             remove = FALSE,
+             fill = "right") %>% 
+    select(-rid) %>% 
+    mutate(
+      id_link = case_when(
+        is.na(id_date_creation) ~ id_anonymat,
+        is.na(id_link) ~ id_anonymat,
+        TRUE ~ id_link
+      )
+    ) 
+}
+
 ## 1.1 rename ####
 M2_F0 <- read_sas("../raw_data/gb_ddb_id_01_sc_02.sas7bdat")
 
@@ -31,12 +51,16 @@ M2_F1 <- M2_F0 %>%
          "sc_diplome_date" =  "sc_date_diplome",
          "sc_debut_an" = "ps_an_debut",
          "sc_debut_age" = "sc_age_debut",
-         "sc_debut_date" = "sc_date_debut")
+         "sc_debut_date" = "sc_date_debut") %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>%
+  make_id_link(.)
 
 ## 1.2 remove duplicates ####
 doublons <- M2_F1 %>% 
-  filter(is.na(id_date_creation)) %>% 
-  mutate(id_link = id_anonymat)
+  filter(is.na(id_date_creation))
 
 list_doublons <- unique(doublons$id_link)
 
@@ -48,13 +72,19 @@ find_identity <- function(df){
         id_sep, regex(paste0(list_doublons, collapse = "|"))))
 }
 
+#identity <- M2_F1 %>% 
+#  find_identity(.) %>% 
+#  separate(id_sep,
+#           into = c("rid", "id_link"),
+#           sep = "_",
+#           remove = FALSE) %>% 
+#  select(-rid)
+  
 identity <- M2_F1 %>% 
-  find_identity(.) %>% 
-  separate(id_sep,
-           into = c("rid", "id_link"),
-           sep = "_",
-           remove = FALSE) %>% 
-  select(-rid)
+  filter(id_link %in% list_doublons,
+         !is.na(id_date_creation)) %>% 
+  relocate(id_link) %>% 
+  arrange(id_link)
 
 vars_identity <- identity %>% 
   select(all_of(starts_with("id_"))) %>% 
@@ -68,8 +98,7 @@ clean <- full_join(
   doublons %>% 
     select(all_of(vars_doublons)),
   by = "id_link"
-) %>% 
-  select(-id_link)
+)
 
 ids_TPO <- union(list_doublons, clean$id_anonymat)
 
@@ -77,23 +106,7 @@ M2_F2 <- bind_rows(
   M2_F1 %>% 
     filter(!id_anonymat %in% ids_TPO),
   clean
-) %>% 
-  separate(id_sep,
-           into = c("rid", "id_link"),
-           sep = "_",
-           remove = FALSE,
-           fill = "right") %>%
-  select(-rid) %>% 
-  mutate(id_link = case_when(
-    is.na(id_link) ~ id_anonymat,
-    TRUE ~ id_link
-  )) %>% 
-  mutate(
-    across(
-      .cols = where(is.character),
-      .fns = ~ na_if(., "") # Changer les colonnes en NA
-    )
-  )
+)
 
 # CLean up
 rm(list = c("clean",
@@ -105,6 +118,10 @@ rm(list = c("clean",
             "list_doublons",
             "vars_doublons",
             "vars_identity"))
+
+## 1.3 recoder variables ####
+
+
 
 # 2. REDOUBLEMENT ####
 M2_rdb_F0 <- read_sas("../raw_data/gb_ddb_sc_02_rdb_02.sas7bdat")
@@ -128,21 +145,7 @@ cols_rd <- M2_rdb_F0 %>%
   select(all_of(starts_with("rd_"))) %>% 
   colnames()
 
-# Fonction pour créer variable de lien pour les doublons
-  make_id_link <- function(df){
-    
-    df %>% 
-      separate(id_sep,
-               into = c("rid", "id_link"),
-               sep = "_",
-               remove = FALSE,
-               fill = "right") %>%
-      select(-rid) %>% 
-      mutate(id_link = case_when(
-        is.na(id_link) ~ id_anonymat,
-        TRUE ~ id_link
-      ))
-  }
+
 
 
 M2_rdb_F1 <- M2_rdb_F0 %>%  
