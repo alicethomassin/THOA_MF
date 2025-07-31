@@ -146,6 +146,20 @@ recode_year <- function(df, borne, var_year){
     )
 }
 
+recode_miss_ques <- function(df, borne, var_miss){
+  # revoir la distinction entre 444L 555L et 777L
+  df %>% 
+    mutate(
+      {{var_miss}} := case_when(
+        {{borne}} == 1 & is.na({{var_miss}}) ~ 555L,
+        {{borne}} == 0  & is.na({{var_miss}}) ~ 444L,
+        {{borne}} > 1 & is.na({{var_miss}}) ~ 777L,
+        is.na({{borne}}) ~ NA_integer_,
+        TRUE ~ {{var_miss}}
+      )
+    )
+}
+
 recode_qcm <- function(df, borne, list_vars){
   
   df %>% 
@@ -178,7 +192,7 @@ M2_F3 <- M2_F2 %>%
         .f = function(...) {
           row <- c(...)  # transforme les arguments en vecteur ligne
           first_class <- classe_index[which(row == 1)]
-          if (length(first_class) == 0) NA_integer_ else min(first_class)
+          if (length(first_class) == 0) 0 else min(first_class)
         }
       )
     ),
@@ -188,7 +202,8 @@ M2_F3 <- M2_F2 %>%
       is.na(sc_plan) ~ NA_integer_
     )) %>% 
   recode_year(sc_plan, sc_plan_an) %>%
-  recode_qcm(sc_plan, vars_choix_multiple)
+  recode_qcm(sc_plan, vars_choix_multiple) %>% 
+  recode_miss_ques(sc_plan, sc_plan_demande)
   
 verif <- M2_F3 %>% 
   relocate(sc_type, sc_plan, sc_plan_classe, sc_plan_nb, sc_plan_an, sc_plan_demande, all_of(vars_choix_multiple))
