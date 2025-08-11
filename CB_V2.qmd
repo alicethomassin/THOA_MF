@@ -1,0 +1,25 @@
+---
+title: "CB_V2"
+format: typst
+date: 2025-07-28
+author: Alice Thomassin
+toc: true
+toc-title: "Table des matières"
+mainfont: "Tahoma"
+fontsize: 12pt
+papersize: a4
+execute: 
+  echo: false
+  warning: false
+---
+
+# bim
+termi
+: c'est ça
+
+```{=typst} 
+#set text(fill: red)
+```
+
+term
+: definition definition definition definition definition definition definition definition definition definition definition definition
