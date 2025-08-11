@@ -1,0 +1,187 @@
+---
+title: "Codebook for data"
+format: html
+toc: true
+theme: sandstone
+---
+
+```{r packages}
+#| echo: false
+#| warning: false
+library(summarytools)
+library(haven)
+library(tidyverse)
+```
+
+
+```{r import-data}
+#| include: false
+
+data <- read.csv("../clean_data/thoa_MV11.csv")
+
+```
+
+
+```{r selecting-id-variable}
+#| include: false
+vars_id <- data %>% 
+  select(all_of(starts_with("id")),
+         -all_of(ends_with("_cat")),
+         -id_date_creation,
+         -id_anonymat,
+         -id_date_nais,
+         -id_dep_nais,
+         -id_nom,
+         -id_nom_jeune,
+         -id_prenom,
+         -id_type,
+         -id_tab_db,
+         -id_sep,
+         -id_link)
+
+list_vars_id <- colnames(vars_id)
+
+```
+
+
+
+# Identité
+
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+print(dfSummary(vars_id,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+
+
+| Caractéristiques   | Résultats |
+|--------------------|----------:|
+| Type de variable   |           |
+| Nb NA              |           |
+| Nb valeurs uniques |           |
+| Min. et Max.       |           |
+| Médiane            |           |
+| Q1 et Q2           |           |
+
+
+# Scolarité
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+vars_sc <- data %>% 
+  select(
+    all_of(list_vars_id),
+    all_of(starts_with("sc_")),
+         -sc_commentaires,
+         -sc_date_creation,
+         -sc_date_debut,
+         -all_of(ends_with("_autre")),
+         -all_of(contains("_plan_ets")),
+         -all_of(contains("notification")),
+         -all_of(starts_with("sc_rdb")),
+         -all_of(starts_with("sc_int"))) %>% 
+  filter(sc_type == "P")
+
+print(dfSummary(vars_sc,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+## Redoublement
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_rdb <- data %>% 
+  select(
+    all_of(list_vars_id),
+    all_of(starts_with("sc_rdb"))) %>% 
+  filter(!is.na(sc_rdb_date_creation))
+
+print(dfSummary(vars_rdb,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+
+## Interruptions
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+vars_int <- data %>% 
+  select(all_of(starts_with("sc_int")))
+
+print(dfSummary(vars_int,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+# Profession
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+vars_pro <- data %>% 
+  select(all_of(starts_with("pr_")),
+         -all_of(starts_with("pr_int")))
+
+print(dfSummary(vars_pro,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+## Interruptions
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+vars_pro_int <- data %>% 
+  select(all_of(starts_with("pr_int")))
+
+print(dfSummary(vars_pro_int,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+```{r}
+
+descr(data$sc_int01_duree_j)
+```
+
+
+```{r}
+
+freq(data$id_age, plain.ascii = FALSE, style = "grid")
+```
+
+
+
+```{r}
+(scolarite.descr <- data %>%
+  filter(sc_type == "P") %>% 
+  select(id_age, id_sexe) %>%
+  descr(
+    stats     = c("mean", "sd"),
+    transpose = TRUE,
+    headings  = FALSE))
+```
+
+
+
