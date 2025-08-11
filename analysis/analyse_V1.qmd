@@ -1,0 +1,34 @@
+---
+title: "analyse_V1"
+format: pdf
+---
+
+```{r Setup}
+#| echo: false
+#| warning: false
+# Pour la manipulation des données
+library(tidyverse)
+
+# Pour importer les données SAS
+library(haven)
+
+# Pour identifier les colonnes vides
+library(janitor)
+
+# Importer les données
+data <- read.csv("../../clean_data/thoa_MV11.csv") %>% 
+  select(order(colnames(.)))
+```
+
+```{r}
+
+vars_id <- data %>%
+  select(all_of(starts_with("id_"))) %>%
+  colnames()
+
+vars_sc <- data %>% 
+  select(all_of(starts_with("sc_")),
+         -all_of(starts_with("sc_int0")),
+         -all_of(starts_with("sc_rdb0"))) %>% 
+  colnames()
+```
