@@ -10,6 +10,12 @@ library(janitor)
 # SCOLARITÉ ####
 
 M2_F0 <- read_sas("../raw_data/gb_ddb_id_01_sc_02.sas7bdat")
+
+miss_var_summary(M2_F0) %>% 
+  gt() %>% 
+  gt_theme_guardian() %>% 
+  tab_header(title = "missingness of variables")
+
 ## Remove empty cols ####
 
 M2_F1 <- M2_F0 %>%
@@ -22,11 +28,13 @@ M2_F1 <- M2_F0 %>%
 ## Rename cols ####
 
 cols_fa <- M2_F1 %>% 
-  select(all_of(starts_with("fa_"))) %>% 
+  select(all_of(starts_with("fa_")),
+         -fa_an_diplome) %>% 
   colnames()
 
 cols_ps <- M2_F1 %>% 
-  select(all_of(starts_with("ps_"))) %>% 
+  select(all_of(starts_with("ps_")),
+         -ps_an_debut) %>% 
   colnames()
 
 M2_F2 <- M2_F1 %>% 
@@ -35,7 +43,13 @@ M2_F2 <- M2_F1 %>%
   rename_with(~ gsub("^ps_", "sc_", .x), all_of(cols_ps)) %>% 
   rename("id_tab_db" = "tab_db",
          "sc_commentaires" = "commentaires_scol",
-         "sc_id_cat" = "id_sc_cat")
+         "sc_id_cat" = "id_sc_cat",
+         "sc_diplome_an" = "fa_an_diplome",
+         "sc_diplome_age" = "sc_age_diplome",
+         "sc_diplome_date" =  "sc_date_diplome",
+         "sc_debut_an" = "ps_an_debut",
+         "sc_debut_age" = "sc_age_debut",
+         "sc_debut_date" = "sc_date_debut")
 
 ### Clean up
 rm(list = c("cols_fa",
