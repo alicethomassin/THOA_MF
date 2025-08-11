@@ -1,0 +1,233 @@
+---
+title: "pond"
+format: html
+toc: true
+theme: sandstone
+---
+
+```{r packages}
+#| echo: false
+#| warning: false
+library(summarytools)
+library(haven)
+library(tidyverse)
+```
+
+
+```{r import-data}
+#| include: false
+
+data <- read.csv("../clean_data/thoa_MV11.csv")
+
+```
+
+
+# Enquête
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_id <- data %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_id,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+# Scolarité
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_sc <- data %>% 
+  filter(sc_type == "P") %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_sc,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+
+## - Redoublement
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_rdb <- data %>% 
+  filter(sc_type == "P",
+         !is.na(sc_rdb_date_creation)) %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_rdb,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+## - Interruptions
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_int <- data %>% 
+  filter(sc_type == "P",
+         !is.na(sc_int_date_creation)) %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_int,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+
+# Profession
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_pr <- data %>% 
+  filter(pr_type == "P",
+         !is.na(pr_date_creation)) %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_pr,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+## - Interruptions
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_pr_int <- data %>% 
+  filter(pr_type == "P",
+         !is.na(pr_int_date_creation)) %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_pr_int,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+# Famille
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_fa <- data %>% 
+  filter(fa_type == "P",
+         !is.na(fa_date_creation)) %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_fa,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+## - Couple
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_cpl <- data %>% 
+  filter(fa_type == "P",
+         !is.na(fa_couple_date_creation)) %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_cpl,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+## - Enfants
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_enf <- data %>% 
+  filter(fa_type == "P",
+         !is.na(fa_enfants_date_creation)) %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_enf,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+# Logement
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_log <- data %>% 
+  filter(lo_type == "P",
+         !is.na(lo_date_creation)) %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_log,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+# Qualité de vie
+```{r}
+#| results: asis
+#| warning: false
+#| echo: false
+
+vars_qdv <- data %>% 
+  filter(qv_type == "P",
+         !is.na(qv_date_creation)) %>% 
+  select(id_sexe, id_age, id_age_cat_2)
+
+print(dfSummary(vars_qdv,
+                graph.magnif = .75,
+                na.col = FALSE), 
+      method = "render")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
