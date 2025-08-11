@@ -4,14 +4,14 @@
 ) = {
 
  set text(
-    font: "Times New Roman",
+    font: "Niramit",
     size: 12pt,
   )
 
  set page(
     "us-letter",
     margin: (left: 1in, right: 1in, top: 0.7in, bottom: 1in),
-    background: place(top, rect(fill: rgb("15397F"), width: 100%, height: 0.5in)),
+    background: place(top, rect(fill: rgb("dc3230"), width: 100%, height: 0.5in)),
     header: align(
       horizon,
       grid(
@@ -20,6 +20,9 @@
       ),
     )
   )
-
+  
+  set par(
+  justify: true
+  )
   body
 }
