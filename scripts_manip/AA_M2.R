@@ -86,9 +86,101 @@ M2_F2 <- bind_rows(
     TRUE ~ id_link
   ))
 
-# Étiquettes des variables ####
+# Appliquer integer ####
+
+vars_int <- M2_F2 %>% 
+  select(
+    id_centre1, id_centre2, id_centre3, id_dep_nais, id_lieu_nais, id_sexe,
+    id_age, id_tab_db, sc_diplome_an, sc_diplome, sc_fin_etudes, sc_formation,
+    sc_debut_an, sc_debut, sc_interromp, sc_redoubl, sc_debut_corr, 
+    sc_debut_age, sc_diplome_age, starts_with("sc_plan"), -sc_plan_notification_autre) %>% 
+  colnames()
+
+vars_choix_multiple <- setdiff(vars_plan, c("sc_plan", "sc_plan_an", "sc_plan_demande"))
 
 M2_F3 <- M2_F2 %>%
+  mutate(
+    across(
+      .cols = all_of(vars_int),
+      .fns = ~ as.integer(.)
+    ),
+    across(
+      .cols = all_of(vars_choix_multiple),
+      .fns = ~ case_when(
+        sc_plan == 1 & is.na(.) ~ 0L,
+        sc_plan == 0 & is.na(.) ~ 777L,
+        is.na(sc_plan) ~ NA_integer_,
+        TRUE ~ .)
+      ),
+    sc_plan_demande = case_when(
+      sc_plan == 1 & is.na(sc_plan_demande) ~ 555L,
+      sc_plan == 0 ~ 777L,
+      is.na(sc_plan) ~ NA_integer_,
+      TRUE ~ sc_plan_demande
+    ),
+    sc_plan_an = case_when(
+      sc_plan == 1 & is.na(sc_plan_an) ~ 1000L,
+      sc_plan == 0 ~ 777L,
+      is.na(sc_plan) ~ NA_integer_,
+      TRUE ~ sc_plan_an
+    )
+    )
+
+
+M2_F3 %>% 
+  select(starts_with("id_")) %>% 
+  glimpse()
+
+no_centre <- M2_F3 %>% 
+  select(starts_with("id_")) %>% 
+  filter(is.na(id_centre1))
+
+M2_F2 %>% 
+  select(starts_with("id_")) %>%
+  miss_var_summary() %>% 
+  gt() %>% 
+  tab_header(title = "Missingness of variables")
+
+M2_ets <- M2_F3 %>% 
+  select(id_anonymat, sc_plan, sc_plan_an, sc_plan_demande, all_of(vars_plan_corr))
+
+M2_F2_ets <- M2_F2 %>% 
+  select(id_anonymat, sc_plan, sc_plan_an, sc_plan_demande, all_of(vars_plan_corr))
+
+vars_ets <- M2_F3 %>% 
+  select(starts_with("sc_plan_ets")) %>% 
+  names()
+
+classe_index <- as.integer(str_extract(vars_ets, "\\d+$"))
+
+M2_F4 <- M2_F3 %>%
+  mutate(
+    sc_plan_classe = pmap_int(
+      .l = select(., all_of(vars_ets)),
+      .f = function(...) {
+        row <- c(...)  # transforme les arguments en vecteur ligne
+        first_class <- classe_index[which(row == 1)]
+        if (length(first_class) == 0) NA_integer_ else min(first_class)
+      }
+    ),
+    sc_plan_nb = case_when(
+      sc_plan == 1 ~ rowSums(select(., all_of(vars_ets)) == 1, na.rm = T),
+      sc_plan == 0 ~ 777L,
+      is.na(sc_plan) ~ NA_integer_
+    )
+  )
+
+M2_F4_ets <- M2_F4 %>% 
+  select(id_anonymat, sc_plan, sc_plan_nb, sc_plan_an, sc_plan_classe, sc_plan_demande, all_of(vars_plan_corr))
+
+# Corriger NAs ####
+
+
+
+
+# Étiquettes des variables ####
+
+M2_F4 <- M2_F3 %>%
   {
     vars_ets <- select(., starts_with("sc_plan_ets")) %>% names()
     labels_ets <- set_names(rep("SC-20", length(vars_ets)), vars_ets)
@@ -142,4 +234,50 @@ M2_F3 <- M2_F2 %>%
     sc_commentaires = "SC-27",
     sc_type = "sc- si module complété"
   )
+
+
+# Format des variables ####
+M2_F3 <- M2_F2 %>% 
+  mutate(
+    sc_debut = factor(
+      sc_debut,
+      levels = c(1, 2, 999),
+      labels = c("CP", "CE1", "Autre")),
+    
+    )
+
+M2_F4 <- M2_F2 %>% 
+  mutate(sc_debut = as.integer(sc_debut))
+
+M2_F5 <- M2_F4 %>% 
+  mutate(
+    sc_debut = factor(
+      sc_debut,
+      levels = c(1, 2, 999),
+      labels = c("CP", "CE1", "Autre")),
+    
+  )
+
+M2_F6 <- M2_F4 %>% 
+  mutate(sc_debut = factor(sc_debut))
+
+
+M2_docu <- M2_F2 %>% 
+  mutate(
+    sc_debut = labelled(
+      sc_debut,
+      labels = c("CP"=1, "CE1"=2, "Autre"=999),
+      label = "SC-01: Par quelle classe avez-vous débuté votre scolarité (en dehors de la maternelle)?")
+  ) %>% 
+  set_variable_labels(
+    sc_debut_autre = "SC-01: Autre, précisez"
+  )
+
+M2_app <- M2_docu %>% 
+  mutate(sc_debut = to_factor(sc_debut, levels = "values"))
+
+
+
+
+
 
