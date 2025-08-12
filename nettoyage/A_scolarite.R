@@ -133,33 +133,83 @@ vars_ets <- M2_F2 %>%
 
 classe_index <- as.integer(str_extract(vars_ets, "\\d+$"))
 
-recode_year <- function(df, borne, var_year){
-  
+recode_year1 <- function(df, borne, var_year){
+  # Dans le cas où il y a une question borne
   df %>% 
     mutate(
       {{var_year}} := case_when(
-        {{borne}} == 1 & is.na({{var_year}}) ~ 1000L,
-        {{borne}} == 0 | {{borne}} > 1 ~ 777L,
-        is.na({{borne}}) ~ NA_integer_,
-        TRUE ~ {{var_year}}
+        {{borne}} == 1 & is.na({{var_year}}) ~ 9999L, # Concerné, mais pas répondu
+        {{borne}} == 0 | {{borne}} > 1 ~ 7777L,       # Pas concerné
+        is.na({{borne}}) ~ NA_integer_,               # Pas participé
+        TRUE ~ {{var_year}}                           # Réponse renseignée
       )
     )
 }
 
-recode_miss_ques <- function(df, borne, var_miss){
-  # revoir la distinction entre 444L 555L et 777L
+recode_month1 <- function(df, borne, var_month){
+  
+  df %>% 
+    mutate(
+      {{var_month}} := case_when(
+        {{borne}} == 1 & is.na({{var_month}}) ~ 99L, # Concerné, mais pas répondu
+        {{borne}} == 0 | {{borne}} > 1 ~ 77L,        # Pas concerné
+        is.na({{borne}}) ~ NA_integer_,              # Pas participé
+        TRUE ~ {{var_month}}                         # Réponse renseignée
+    ))
+}
+
+recode_year2 <- function(df, borne_module, var_year){
+  # Dans la cas où question NA non bornée (ex DDN des parents vide, mais quand
+  # même participé au module)
+  df %>% 
+    mutate(
+      {{var_year}} := case_when(
+        {{borne_module}} == "P" & is.na({{var_year}}) ~ 9999L,       # Concerné, mais pas répondu
+        {{borne_module}} != "P" & is.na({{var_year}}) ~ NA_integer_, # Pas participé
+        TRUE ~ {{var_year}}                                          # Réponse renseignée
+      )
+    )
+}
+
+recode_month2 <- function(df, borne_module, var_month){
+  # Dans la cas où question NA non bornée (ex DDN des parents vide, mais quand
+  # même participé au module)
+  df %>% 
+    mutate(
+      {{var_month}} := case_when(
+        {{borne_module}} == "P" & is.na({{var_month}}) ~ 99L,         # Concerné, mais pas répondu
+        {{borne_module}} != "P" & is.na({{var_month}}) ~ NA_integer_, # Pas participé
+        TRUE ~ {{var_month}}                                          # Réponse renseignée
+      )
+    )
+}
+
+
+recode_qborne <- function(df, borne, var_miss){
+  # Pour les questions bornées au sein d'un module
   df %>% 
     mutate(
       {{var_miss}} := case_when(
-        {{borne}} == 1 & is.na({{var_miss}}) ~ 555L,
-        {{borne}} == 0  & is.na({{var_miss}}) ~ 444L,
-        {{borne}} > 1 & is.na({{var_miss}}) ~ 777L,
-        is.na({{borne}}) ~ NA_integer_,
+        {{borne}} == 1 & is.na({{var_miss}}) ~ 555L,  # Concerné, pas répondu
+        {{borne}} == 0  & is.na({{var_miss}}) |
+          {{borne}} > 1 & is.na({{var_miss}}) ~ 777L, # Pas concerné, pas répondu
+        is.na({{borne}}) ~ NA_integer_,               # Pas participé
+        TRUE ~ {{var_miss}}                           # Réponse renseignée
+      )
+    )
+}
+
+recode_qnorm <- function(df, big_borne, var_miss){
+  # Pour les questions d'un module hors bornes
+  df %>% 
+    mutate(
+      {{var_miss}} := case_when(
+        {{big_borne}} == "P" & is.na({{var_miss}}) ~ 555L,
+        {{big_borne}} != "P" & is.na({{var_miss}}) ~ NA_integer_,
         TRUE ~ {{var_miss}}
       )
     )
 }
-
 recode_qcm <- function(df, borne, list_vars){
   
   df %>% 
@@ -201,14 +251,17 @@ M2_F3 <- M2_F2 %>%
       sc_plan == 0 ~ 777L,
       is.na(sc_plan) ~ NA_integer_
     )) %>% 
-  recode_year(sc_plan, sc_plan_an) %>%
+  recode_year1(sc_plan, sc_plan_an) %>%
   recode_qcm(sc_plan, vars_choix_multiple) %>% 
-  recode_miss_ques(sc_plan, sc_plan_demande)
+  recode_qnorm(sc_type, sc_plan_demande)
   
 verif <- M2_F3 %>% 
   relocate(sc_type, sc_plan, sc_plan_classe, sc_plan_nb, sc_plan_an, sc_plan_demande, all_of(vars_choix_multiple))
 
 
+sc_P <- M2_F3 %>% 
+  filter(is.na(sc_type)) %>% 
+  relocate(sc_type, sc_debut, sc_debut_an, sc_redoubl, sc_interromp, sc_plan, sc_plan_an, sc_plan_demande, sc_fin_etudes, sc_formation, sc_diplome, sc_diplome_an)
 
 
 # 2. REDOUBLEMENT ####
