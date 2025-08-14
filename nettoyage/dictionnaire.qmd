@@ -1,0 +1,194 @@
+---
+title: "dictionnaire"
+format: pdf
+---
+
+```{r}
+#| message: false
+#| echo: false
+library(dplyr)
+library(gt)
+library(gtExtras)
+library(haven)
+library(tidyverse)
+library(knitr)
+library(ggplot2)
+library(rlang)
+library(kableExtra)
+```
+
+
+
+```{r data}
+#| message: false
+#| echo: false
+make_id_link <- function(df){
+  
+  df %>%
+    separate(id_sep,
+             into = c("rid", "id_link"),
+             sep = "_",
+             remove = FALSE,
+             fill = "right") %>% 
+    select(-rid) %>% 
+    mutate(
+      id_link = case_when(
+        is.na(id_date_creation) ~ id_anonymat,
+        is.na(id_link) ~ id_anonymat,
+        TRUE ~ id_link
+      )
+    ) 
+}
+
+
+M2_F0 <- read_sas("../../raw_data/gb_ddb_id_01_sc_02.sas7bdat")
+
+cols_fa <- M2_F0 %>% 
+  select(all_of(starts_with("fa_")),
+         -fa_an_diplome) %>% 
+  colnames()
+
+cols_ps <- M2_F0 %>% 
+  select(all_of(starts_with("ps_")),
+         -ps_an_debut) %>% 
+  colnames()
+
+M2_F1 <- M2_F0 %>% 
+  rename_with(~ paste0("sc_", .x), etspps) %>% 
+  rename_with(~ gsub("^fa_", "sc_", .x), all_of(cols_fa)) %>% 
+  rename_with(~ gsub("^ps_", "sc_", .x), all_of(cols_ps)) %>% 
+  rename("id_tab_db" = "tab_db",
+         "sc_commentaires" = "commentaires_scol",
+         "sc_id_cat" = "id_sc_cat",
+         "sc_diplome_an" = "fa_an_diplome",
+         "sc_diplome_age" = "sc_age_diplome",
+         "sc_diplome_date" =  "sc_date_diplome",
+         "sc_debut_an" = "ps_an_debut",
+         "sc_debut_age" = "sc_age_debut",
+         "sc_debut_date" = "sc_date_debut") %>% 
+  mutate(across(
+    .cols = where(is.character),
+    .fns = ~ na_if(., "")
+  )) %>%
+  make_id_link(.)
+
+
+doublons <- M2_F1 %>% 
+  filter(is.na(id_date_creation))
+
+list_doublons <- unique(doublons$id_link)
+
+
+find_identity <- function(df){
+  df %>% 
+    filter(
+      str_ends(
+        id_sep, regex(paste0(list_doublons, collapse = "|"))))
+}
+  
+identity <- M2_F1 %>% 
+  filter(id_link %in% list_doublons,
+         !is.na(id_date_creation)) %>% 
+  relocate(id_link) %>% 
+  arrange(id_link)
+
+vars_identity <- identity %>% 
+  select(all_of(starts_with("id_"))) %>% 
+  colnames()
+
+vars_doublons <- union("id_link", setdiff(names(M2_F1), vars_identity))
+
+clean <- full_join(
+  identity %>% 
+    select(all_of(vars_identity)),
+  doublons %>% 
+    select(all_of(vars_doublons)),
+  by = "id_link"
+)
+
+ids_TPO <- union(list_doublons, clean$id_anonymat)
+
+M2_F2 <- bind_rows(
+  M2_F1 %>% 
+    filter(!id_anonymat %in% ids_TPO),
+  clean
+)
+
+
+rm(list = c("clean",
+            "doublons",
+            "identity",
+            "cols_fa",
+            "cols_ps",
+            "ids_TPO",
+            "list_doublons",
+            "vars_doublons",
+            "vars_identity"))
+
+```
+
+
+
+```{r}
+
+tableau_num <- function(data, var) {
+  
+  var_sym <- enquo(var)                      # capture l'expression
+  var_name <- as_name(var_sym)               # nom de la variable
+  var_data <- data %>% pull(!!var_sym)        # vecteur de données
+  
+  mean_val <- mean(var_data, na.rm = TRUE)
+  sd_val   <- sd(var_data, na.rm = TRUE)
+  min_val  <- min(var_data, na.rm = TRUE)
+  q1_val   <- quantile(var_data, 0.25, na.rm = TRUE)
+  med_val  <- median(var_data, na.rm = TRUE)
+  q3_val   <- quantile(var_data, 0.75, na.rm = TRUE)
+  max_val  <- max(var_data, na.rm = TRUE)
+  
+  stats_text <- paste0(
+    "Moy(sd): ", round(mean_val, 2), "(", round(sd_val, 2),")", "\n",
+    "Min ≤ Med ≤ Max:", "\n", 
+    round(min_val, 2), " ≤ ", round(med_val, 2), " ≤ ", round(max_val, 2), "\n",
+    "Q1-Q3:", round(q1_val, 2), "-", round(q3_val, 2)
+  )
+  
+  stats <- tibble(
+    variable = var_name,
+    type = class(var_data)[1],
+    label = "",  # ici tu peux brancher var_label si besoin
+    stats = stats_text,
+    n_distinct = n_distinct(var_data, na.rm = TRUE),
+    missing_n = sum(is.na(var_data)),
+    missing_pct = mean(is.na(var_data)) * 100
+  )
+  
+  plot <- ggplot(data, aes(x = !!var_sym)) +
+    geom_histogram(binwidth = 1, fill = "skyblue", color = "black") +
+    theme_minimal()
+  
+  tableau <- kbl(stats, format = "latex", booktabs = TRUE, escape = FALSE) %>%
+    kable_styling(latex_options = c("hold_position", "scale_down")) %>%
+    column_spec(4, width = "10cm")
+  
+  list(
+    tableau = stats,
+    graphique = plot
+  )
+}
+```
+
+
+
+```{r}
+res <- tableau_num(M2_F2, id_age)
+
+# Tableau
+res$tableau 
+```
+
+
+```{r}
+res$graphique
+```
+
+
