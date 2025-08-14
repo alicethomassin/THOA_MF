@@ -1,0 +1,29 @@
+Sortes de variables:
+
+Variables BORNES (qnorm -> x_type)
+   Elles sont accessibles à tout ceux qui ont participé au module. Elle ne sont
+   soumises à aucun filtre. Elles dépendent des variables x_type qui indiquent
+   si l'enquêté a participé au module. Il existe différentes sortes de valeurs manquantes
+    NA:  Lorsque l'enquêté n'a pas participé au module (x_type != P)
+    555: Lorsque l'enquêté a participé au module, mais n'a pas répondu à la question (x_type == P)
+    x:   Toute autre valeur correspond à une des modalités du questionnaire
+    
+Variables BORNÉES (qborned -> qnorm)
+  Elles ne sont accessibles que si une précédente question a une modalité 
+  particulière. Il existe différentes sortes de valeurs manquantes
+    NA:  Lorsque l'enquêté n'a pas participé au module (is.na(qnorm))
+    777: Lorsque l'enquêté a répondu à la question borne et qu'il n'est pas 
+         concerné par le sujet (qnorm != 1)
+    555: Lorsque l'enquêté n'a pas répondu à la question borne (qnorm == 555)
+    444: Lorsque l'enquêté a répondu à la question borne, qu'il est concerné
+         par le sujet, mais qu'il n'y a pas de donnée (qnorm == 1 & is.na(qborned))
+    x:   Toute autre valeur correspond à une des modalités du questionnaire
+         
+
+Variables CHOIX MULTIPLES (qcm -> qborned)
+  Chaque variable correspond à une modalité de réponse sur l'interface du 
+  questionnaire de l'enquêté. Il existe différentes sortes de valeurs manquantes
+    0:   La modalité n'a pas été sélectionnée par l'enquêté 
+    1:   La modalité a été sélectionnée par l'enquêté
+    
+    
