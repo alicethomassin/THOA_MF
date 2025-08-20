@@ -120,6 +120,9 @@ test <- M2_F2 %>%
 look_for(test)
 
 test %>% dfSummary() %>% view()
+
+# Modification de la fonctions dfSummary() pour remplacer la dernière ligne par
+# Q1 et Q3
 st_options(
   dfSummary.custom.1 = 
     expression(
