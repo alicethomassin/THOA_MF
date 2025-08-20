@@ -1,0 +1,18 @@
+---
+title: "rapport"
+format: pdf
+---
+
+Je dois recommencer à écrire pour reprendre le contrôle sur mon travail. Dans les dernières semaines, je n'ai pas avancé. Je me demande pourquoi. La journée où j'ai pris le train avec ma mère pour aller à Londres, j'avais l'intention d'avancer. J'ai fait quelques fonctions, mais je n'ai pas vraiment travaillé. J'ai pris beaucoup de temps dans les dernières semaines à me renseigner sur divers calculs statistiques. Je regardais des tutos sur youtube et je prenais des notes. Je me faisais un peu l'illusion d'avancer sans vraiment le faire.
+
+Je crois que j'ai commencé à décrocher quand j'ai perdu mon travail et que j'ai eu à apprendre à utiliser Git. J'ai ensuite réussi à produire ma base unique, mais je n'avais toujours pas ajouté le module sur la fraternité. J'ai ensuite eu à documenter mes variables et là, j'ai perdu beaucoup de temps à me renseigner pour savoir comment l'automatiser. Je crois que ça a affecté mon assurance, parce que je n'arrivais pas à trouver de solutions.
+
+Il y a ensuite eu la quesiton de pondérer les variables. Là, ça aussi ça m'a annéanti. Ça faisait beaucoup et je tournais en rond, sans savoir quoi prioriser.
+
+Quand j'ai commencé à trouver une solution pour la documentation des variables, j'ai réalisé que je n'avais même pas porté attention aux variables manquantes. Là, je me suis lancée dans les démarches de construire les modalités. Je devais donc rédiger des fonctions, ce que j'ai longtemps évité. Le problème, c'est que je ne savais pas si je devais codifier les valeurs manquantes sur la base finale ou si je devais le faire au fur et à mesure. Éventuellement, j'ai réalisé que sur ma base finale, il me manque 6 prénoms. J'ignore s'il existe d'autres variables pour lesquelles j'ai des valeurs manquantes. J'ai donc décidé de me relancer dans le projet de produire une base unique, tout en modifiant au fur et à mesure les modalités manquantes.
+
+Cette suite m'intimide et me décourage. Je crois que c'est la raison pour laquelle je suis inactive. Il y a aussi le rapport de stage qui doit être rendu dans quelques jours, ce dernier que je n'ai toujours pas entamé. Bref, c'est un peu la panique tranquille et profondément inconfortable. Non seulement ça, mais en plus, il y a toutes sortes de catastrophes qui se déroulent aux États-Unis et dans la politique mondiale en générale et j'ai le malheur d'avoir développé un intérêt pour ces questions. Je passe donc mes journées à regarder des vidéos youtube sur le sujet plutôt que d'avancer.
+
+Je dois aussi ajouter que depuis les deux dernières semaines, je suis toujours seule dans ma salle de travail. Ça m'empêche terriblement de ressentir suffisament de pression pour avancer.
+
+Je ne sais pas si je me trouve des excuses ou si ce sont les réelles causes de mon décrochage. Je crois aussi que le contenu que je consomme évoque de fortes émotions chez moi alors que R me fait basculer au neutre. Ce neutre ne m'attire pas. On dirait que j'ai trouvé une nouvelle source d'intérêt et que j'ai du mal à m'adoner à quoi que ce soit qui soit moins stimulant, ou pire, qui me fasse douter en moi.
