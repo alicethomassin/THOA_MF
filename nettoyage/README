@@ -26,4 +26,38 @@ Variables CHOIX MULTIPLES (qcm -> qborned)
     0:   La modalité n'a pas été sélectionnée par l'enquêté 
     1:   La modalité a été sélectionnée par l'enquêté
     
+
+Sortes de modalités:
+
+Questions à saisies libres
+  3 lettres: donner le nom d'une personne
+  2 lettres: donner le prénom d'une personne
+  1 ou 2: donner le sexe de la personne
+
+Questions à choix
+  A) Ces variables correspondent à des questions auxquelles tous les enquêtés
+     peuvent répondre. Il existe un nombre limité de modalités possibles.
+     Elles ont deux types de variables manquantes:
+      NA:  Ceux qui n'ont pas participé au module
+      555: Ceux qui ont participé au module, mais qui n'ont pas répondu à la question
+  
+      AF) Ces variables correspondent à des questions qui bornent les questions
+          de type B). Le recodage des valeurs manquantes est le même que pour
+          les variables de type A)
+      
+    Pour ces variables, les valeurs manquantes sont recodées à l'aide de la
+    fonction recode_qnorm()
     
+  B) Ces variables correspondent à des questions auxquelles certains enquêtés
+     peuvent répondre. Pour y avoir accès, il doivent avoir une certaine modalité
+     à la question que je qualifie de "question borne". Cette question comprend un 
+     filtre. Il existe différents filtres:
+     
+     B0) Si la modalité de la question borne = 0 (sc_fin_etudes)
+     B1) Si la modalité de la question borne = 1 et que le recodage est d'une longueur de 3
+     B2) Si la modalité de la question borne = 1 et que le recodage est d'une longueur de 4
+     
+    
+----
+
+
