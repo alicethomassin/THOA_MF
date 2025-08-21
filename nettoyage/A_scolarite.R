@@ -1,7 +1,5 @@
 # Pour la manipulation des données
 library(tidyverse)
-
-# Pour importer les données SAS
 library(haven)
 library(questionr)
 library(summarytools)
@@ -26,10 +24,10 @@ make_id_link <- function(df){
       )
     ) 
 }
-
-## 1.1 rename ####
 M2_F0 <- read_sas("../raw_data/gb_ddb_id_01_sc_02.sas7bdat")
 
+## 1.1 rename ####
+# Vecteurs des noms de colonne qui seront manipulés de la même manière
 cols_fa <- M2_F0 %>% 
   select(all_of(starts_with("fa_")),
          -fa_an_diplome) %>% 
@@ -40,6 +38,7 @@ cols_ps <- M2_F0 %>%
          -ps_an_debut) %>% 
   colnames()
 
+# Appliquer les changements de noms
 M2_F1 <- M2_F0 %>% 
   rename_with(~ paste0("sc_", .x), etspps) %>% 
   rename_with(~ gsub("^fa_", "sc_", .x), all_of(cols_fa)) %>% 
@@ -113,6 +112,9 @@ rm(list = c("clean",
             "vars_identity"))
 
 ## 1.3 recoder variables ####
+
+### 1.3.1 Mettre labels ####
+
 
 test <- M2_F2 %>% 
   select(id_anonymat, id_age, sc_debut)
