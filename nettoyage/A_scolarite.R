@@ -3,6 +3,7 @@ library(tidyverse)
 library(haven)
 library(questionr)
 library(summarytools)
+library(naniar)
 
 # 1. SCOLARITÉ ####
 
@@ -98,7 +99,13 @@ M2_F2 <- bind_rows(
   M2_F1 %>% 
     filter(!id_anonymat %in% ids_TPO),
   clean
-)
+  ) %>% 
+  mutate(
+    id_age_cat_3 = case_when(
+      id_age_cat_2 == "Adolescent" ~ "Moins de 18 ans",
+      TRUE ~ id_age_cat_3
+    )
+  )
 
 # CLean up
 rm(list = c("clean",
@@ -110,6 +117,10 @@ rm(list = c("clean",
             "list_doublons",
             "vars_doublons",
             "vars_identity"))
+
+## 1.3 Explorer missing values for identity cols ####
+M1_identity <- M2_F2 %>% 
+  select(starts_with("id_"))
 
 ## 1.3 recoder variables ####
 
@@ -142,7 +153,7 @@ st_options(
     )
 )
 
-dfSummary(test, 
+dfSummary(M1_identity, 
           plain.ascii  = FALSE, 
           style        = "grid", 
           graph.magnif = 0.82, 
@@ -353,9 +364,6 @@ cols_rdb <- M2_rdb_F0 %>%
 cols_rd <- M2_rdb_F0 %>% 
   select(all_of(starts_with("rd_"))) %>% 
   colnames()
-
-
-
 
 M2_rdb_F1 <- M2_rdb_F0 %>%  
   rename_with(~ gsub("^fa_", "sc_", .x), all_of(cols_fa)) %>% 
