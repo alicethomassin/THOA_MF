@@ -444,7 +444,7 @@ together_c <- together %>%
    slice(c(2,
            3,
            5,
-           6,7,
+           6,
            8,
            10,
            12,
@@ -471,11 +471,11 @@ rdb_F1 <- bind_rows(
 rcd_year <- function(df, borne, var_year){
   df %>% 
     mutate(
-      {{var_year}} := as.character(case_when(
-        {{borne}} == 1 & is.na({{var_year}}) ~ "5555", # Concerné, mais pas répondu
-        {{borne}} == 0 | {{borne}} > 1 ~ "7777",       # Pas concerné
-        is.na({{borne}}) ~ NA_character_,               # Pas participé
-        TRUE ~ as.character({{var_year}})                           # Réponse renseignée
+      {{var_year}} := as.integer(case_when(
+        {{borne}} == 1 & is.na({{var_year}}) ~ 5555L, # Concerné, mais pas répondu
+        {{borne}} == 0 | {{borne}} > 1 ~ 7777L,       # Pas concerné
+        is.na({{borne}}) ~ NA_integer_,               # Pas participé
+        TRUE ~ as.integer({{var_year}})                           # Réponse renseignée
       )
     ))
 }
@@ -485,11 +485,11 @@ rcd_vars <- function(df, borne, vars){
     mutate(
       across(
         {{vars}},
-        ~ as.character(case_when(
-        {{borne}} == 1 & is.na(.x) ~ "555", # Concerné, mais pas répondu
-        {{borne}} == 0 | {{borne}} > 1 ~ "777",       # Pas concerné
-        is.na({{borne}}) ~ NA_character_,               # Pas participé
-        TRUE ~ as.character(.x)                           # Réponse renseignée
+        ~ as.integer(case_when(
+        {{borne}} == 1 & is.na(.x) ~ 555L, # Concerné, mais pas répondu
+        {{borne}} == 0 | {{borne}} > 1 ~ 777L,       # Pas concerné
+        is.na({{borne}}) ~ NA_integer_,               # Pas participé
+        TRUE ~ as.integer(.x)                           # Réponse renseignée
         ))
         )
       )
@@ -517,6 +517,93 @@ rdb_F2 <- rdb_F1 %>%
   rcd_chr(sc_redoubl, classe_cat) %>% 
   ungroup()
 
+## 2.4 Ajout variables pour préparer pivot ####
+rdb_F3 <- rdb_F2 %>% 
+  group_by(id_anonymat) %>% 
+  arrange(classe, an) %>% 
+  mutate(sc_rdb_nb = n(),
+         rang_sc_rdb = case_when(
+           sc_rdb_nb == 1 ~ "sc_rdb01",
+           TRUE ~ paste0("sc_rdb", sprintf("%02d", row_number()))
+         )) %>% 
+  relocate(id_anonymat, sc_rdb_nb, rang_sc_rdb, an, classe) %>% 
+  ungroup()
+
+vars_wider <- rdb_F3 %>% 
+  select(an, cause, classe, classe_autre, classe_cat) %>% 
+  colnames()
+
+rcd_yearsW <- function(df, borne, vars_year){
+  df %>% 
+    mutate(
+      across(
+        {{vars_year}},
+        ~ as.integer(case_when(
+          {{borne}} == 1 & is.na(.x) ~ 4444L, # Concerné, mais pas plus de répétitions
+          {{borne}} == 0 | {{borne}} > 1 ~ 777L,       # Pas concerné
+          is.na({{borne}}) ~ NA_integer_,               # Pas participé
+          TRUE ~ as.integer(.x)                           # Réponse renseignée
+        ))
+      )
+    )
+}
+
+rcd_varsW <- function(df, borne, vars){
+  df %>%
+    mutate(
+      across(
+        {{vars}},
+        ~ as.integer(case_when(
+          {{borne}} == 1 & is.na(.x) ~ 444L, # Concerné, mais pas répondu
+          {{borne}} == 0 | {{borne}} > 1 ~ 777L,       # Pas concerné
+          is.na({{borne}}) ~ NA_integer_,               # Pas participé
+          TRUE ~ as.integer(.x)                           # Réponse renseignée
+        ))
+      )
+    )
+}
+
+rcd_chrsW <- function(df, borne, vars){
+  df %>%
+    mutate(
+      across(
+        {{vars}},
+        ~ as.character(case_when(
+          {{borne}} == 1 & is.na(.x) ~ "444-Pas concerné", # Concerné, mais pas de répétition
+          {{borne}} == 0 | {{borne}} > 1 ~ "777-Non concerné",       # Pas concerné
+          is.na({{borne}}) ~ NA_character_,               # Pas participé
+          TRUE ~ as.character(.x)                           # Réponse renseignée
+        ))
+      )
+    )
+}
+
+rdb_W1 <- rdb_F3 %>% 
+  pivot_wider(
+    names_from = rang_sc_rdb,
+    values_from = all_of(vars_wider),
+    names_glue = "{rang_sc_rdb}_{.value}"
+  )
+
+vars_years <- rdb_W1 %>% 
+  select(ends_with("_an")) %>% 
+  colnames()
+
+vars_rcd <- rdb_W1 %>% 
+  select(ends_with("_classe"),
+         ends_with("_cause")) %>% 
+  colnames()
+
+vars_chr <- rdb_W1 %>% 
+  select(ends_with("classe_cat")) %>% 
+  colnames()
+
+rdb_W2 <- rdb_W1 %>% 
+  rcd_yearsW(sc_redoubl, all_of(vars_years)) %>% 
+  rcd_varsW(sc_redoubl, all_of(vars_rcd)) %>% 
+  rcd_chrsW(sc_redoubl, all_of(vars_chr))
+  
+#JE SUIS RENDUE ICI
 ## 2.2 Remove duplicates ####
 common_vars <- intersect(names(M2_rdb_F1), names(M2_F2))
 
