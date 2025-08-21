@@ -18,3 +18,9 @@ Je dois aussi ajouter que depuis les deux dernières semaines, je suis toujours 
 Je ne sais pas si je me trouve des excuses ou si ce sont les réelles causes de mon décrochage. Je crois aussi que le contenu que je consomme évoque de fortes émotions chez moi alors que R me fait basculer au neutre. Ce neutre ne m'attire pas. On dirait que j'ai trouvé une nouvelle source d'intérêt et que j'ai du mal à m'adoner à quoi que ce soit qui soit moins stimulant, ou pire, qui me fasse douter en moi.
 
 Pour le moment, j'ignore un peu où je me situe dans mon script. J'ai le vertige et le coût d'entrée me semble élevé. Pourtant, je n'ai vraiment pas le choix. Plus j'attend, pire ce sera. Je pensais qu'écrire allait me faire du bien, mais je n'en suis plus trop certaine. Je crois que c'est une autre manière pour moi de procrastiner.
+
+J'ai modifié les fonctions pour que les variables soient en character plutôt qu'en integer ou en numérique. Comme ça, dans le dfSummary() on voit mieux la répartition des choix de réponse et on évite d'avoir de l'information inutile comme les moyennes. D'autant plus qu'en ajoutant les modalités des valeurs manquantes, on obtient des stats qui n'ont plus de sens (comme une année moyenne de 2039).
+
+NOPE ÇA FONCTIONNE PAS parce que je ne peux plus ordonner mes variables. Elles doivent demeurer en valeurs numériques.
+
+Je crois avoir terminé le redoublement scolaire. Il me reste à voir la liaison avec la base générale. Ensuite je peux passer aux interruptions.
