@@ -122,227 +122,6 @@ rm(list = c("clean",
 M1_identity <- M2_F2 %>% 
   select(starts_with("id_"))
 
-## 1.3 recoder variables ####
-
-### 1.3.1 Mettre labels ####
-
-
-test <- M2_F2 %>% 
-  select(id_anonymat, id_age, sc_debut)
-
-look_for(test)
-
-test %>% dfSummary() %>% view()
-
-# Modification de la fonctions dfSummary() pour remplacer la dernière ligne par
-# Q1 et Q3
-st_options(
-  dfSummary.custom.1 = 
-    expression(
-      paste(
-        "Q1 - Q3 :",
-        round(
-          quantile(column_data, probs = .25, type = 2, 
-                   names = FALSE, na.rm = TRUE), digits = 1
-        ), " - ",
-        round(
-          quantile(column_data, probs = .75, type = 2, 
-                   names = FALSE, na.rm = TRUE), digits = 1
-        )
-      )
-    )
-)
-
-dfSummary(M1_identity, 
-          plain.ascii  = FALSE, 
-          style        = "grid", 
-          graph.magnif = 0.82, 
-          varnumbers   = FALSE,
-          valid.col    = FALSE,
-          tmp.img.dir  = "/tmp") %>% view()
-
-
-# Sélectionner variables à mettre en integer
-vars_int <- M2_F2 %>% 
-  select(
-    id_centre1, id_centre2, id_centre3, id_dep_nais, id_lieu_nais, id_sexe,
-    id_age, id_tab_db, sc_diplome_an, sc_diplome, sc_fin_etudes, sc_formation,
-    sc_debut_an, sc_debut, sc_interromp, sc_redoubl, sc_debut_corr, 
-    sc_debut_age, sc_diplome_age, starts_with("sc_plan"), -sc_plan_notification_autre) %>% 
-  colnames()
-
-# Sélectionner les variables à traiter comme des choix multiples
-vars_choix_multiple <- M2_F2 %>% 
-  select(starts_with("sc_plan_ets"),
-         starts_with("sc_plan_notifi"),
-         -sc_plan_notification_autre) %>% 
-  colnames()
-
-# Sélectionner les variables pour extraireune partie du titre et en faire
-# de nouvelles variables pour connaître le nombre de plans d'intervention
-# ainsi que la classe de ce premier plan
-vars_ets <- M2_F2 %>% 
-  select(starts_with("sc_plan_ets")) %>% 
-  names()
-
-classe_index <- as.integer(str_extract(vars_ets, "\\d+$"))
-
-recode_year1 <- function(df, borne, var_year){
-  # Dans le cas où il y a une question borne
-  df %>% 
-    mutate(
-      {{var_year}} := case_when(
-        {{borne}} == 1 & is.na({{var_year}}) ~ 5555L, # Concerné, mais pas répondu
-        {{borne}} == 0 | {{borne}} > 1 ~ 7777L,       # Pas concerné
-        is.na({{borne}}) ~ NA_integer_,               # Pas participé
-        TRUE ~ {{var_year}}                           # Réponse renseignée
-      )
-    )
-}
-
-recode_month1 <- function(df, borne, var_month){
-  
-  df %>% 
-    mutate(
-      {{var_month}} := case_when(
-        {{borne}} == 1 & is.na({{var_month}}) ~ 55L, # Concerné, mais pas répondu
-        {{borne}} == 0 | {{borne}} > 1 ~ 77L,        # Pas concerné
-        is.na({{borne}}) ~ NA_integer_,              # Pas participé
-        TRUE ~ {{var_month}}                         # Réponse renseignée
-    ))
-}
-
-recode_year2 <- function(df, type, var_year){
-  # Dans le cas où question NA non bornée (ex DDN des parents vide, mais quand
-  # même participé au module)
-  df %>% 
-    mutate(
-      {{var_year}} := case_when(
-        {{type}} == "P" & is.na({{var_year}}) ~ 5555L,       # Concerné, mais pas répondu
-        {{type}} != "P" & is.na({{var_year}}) ~ NA_integer_, # Pas participé   
-        TRUE ~ {{var_year}}                                  # Réponse renseignée
-      )
-    )
-}
-
-recode_month2 <- function(df, type, var_month){
-  # Dans la cas où question NA non bornée (ex DDN des parents vide, mais quand
-  # même participé au module)
-  df %>% 
-    mutate(
-      {{var_month}} := case_when(
-        {{type}} == "P" & is.na({{var_month}}) ~ 55L,         # Concerné, mais pas répondu
-        {{type}} != "P" & is.na({{var_month}}) ~ NA_integer_, # Pas participé
-        TRUE ~ {{var_month}}                                  # Réponse renseignée
-      )
-    )
-}
-
-recode_qnorm <- function(df, type, var_miss){
-  # Pour les questions d'un module hors bornes, donc obligatoires
-  df %>% 
-    mutate(
-      {{var_miss}} := case_when(
-        {{type}} == "P" & is.na({{var_miss}}) ~ 555L,        # Pas répondu
-        {{type}} != "P" & is.na({{var_miss}}) ~ NA_integer_, # Pas participé module
-        TRUE ~ {{var_miss}}                                  # Réponse enregistrée
-      )
-    )
-}
-
-recode_qborned <- function(df, borne, var_miss){
-  # Pour les questions bornées au sein d'un module
-  df %>% 
-    mutate(
-      {{var_miss}} := case_when(
-        {{borne}} == 1 & is.na({{var_miss}}) ~ 444L,  # Concerné, pas répondu
-        {{borne}} == 555 & is.na({{var_miss}}) ~ 555L,# Pas répondu
-        {{borne}} == 0  & is.na({{var_miss}}) |
-          {{borne}} > 1 & is.na({{var_miss}}) ~ 777L, # Pas concerné, pas répondu
-        is.na({{borne}}) ~ NA_integer_,               # Pas participé module
-        TRUE ~ {{var_miss}}                           # Réponse renseignée
-      )
-    )
-}
-
-recode_qcm <- function(df, borne, list_vars){
-  
-  df %>% 
-    mutate(
-      across(
-        .cols = all_of( {{list_vars}} ),
-        .fns = ~ case_when(
-          {{borne}} == 1 & is.na(.) ~ 0L,
-          {{borne}} == 444 ~ 444L,
-          {{borne}} == 0 | {{borne}} > 1 ~ 777L,
-          is.na({{borne}}) ~ NA_integer_,
-          TRUE ~ .
-        )
-      )
-    )
-  
-}
-
-M2_F3 <- M2_F2 %>%
-  mutate(
-    across(
-      .cols = all_of(vars_int),
-      .fns = ~ as.integer(.)
-    )) %>%
-  mutate(
-    sc_plan_classe = case_when(
-      sc_plan == 0 ~ 777L,
-      sc_plan == 555 ~ 555L,
-      sc_plan == 444 ~ 444L,
-      is.na(sc_plan) ~ NA_integer_,
-      sc_plan == 1 ~ pmap_int(
-        .l = select(., all_of(vars_ets)),
-        .f = function(...) {
-          row <- c(...)  # transforme les arguments en vecteur ligne
-          first_class <- classe_index[which(row == 1)]
-          if (length(first_class) == 0) 0 else min(first_class)
-        }
-      )
-    ),
-    sc_plan_nb = case_when(
-      sc_plan == 1 ~ as.integer(rowSums(select(., all_of(vars_ets)) == 1, na.rm = T)),
-      sc_plan == 0 ~ 777L,
-      is.na(sc_plan) ~ NA_integer_
-    )) 
-
-vle_var <- M2_F3 %>% 
-  relocate(sc_type, sc_debut, sc_redoubl, sc_interromp,
-           sc_plan, sc_plan_an, sc_plan_classe, sc_plan_nb, sc_plan_demande, 
-           sc_fin_etudes, sc_formation, sc_formation_autre, sc_diplome,
-           sc_diplome_autre, sc_diplome_an)
-
-M2_F4 <- M2_F3 %>% 
-  recode_year1(sc_plan, sc_plan_an) %>%
-  recode_qcm(sc_plan, vars_choix_multiple) %>% 
-  recode_qnorm(sc_type, sc_plan_demande) 
-  
-  
-verif <- M2_F3 %>% 
-  relocate(sc_type, sc_debut, sc_debut_autre, sc_debut_corr, sc_debut_an, sc_debut_age, sc_debut_date,
-           sc_plan, sc_plan_classe, sc_plan_nb, sc_plan_an, sc_plan_demande, all_of(vars_choix_multiple))
-
-
-sc_P <- M2_F3 %>% 
-  relocate(sc_type, all_of(quest_norm))
-
-quest_norm <- M2_F1 %>% 
-  select(sc_debut, sc_debut_an, sc_redoubl, sc_interromp, sc_plan, sc_plan_demande,
-         sc_fin_etudes) %>% 
-  colnames()
-
-
-sc_empties <- M2_F2 %>%
-  select(id_anonymat, sc_type, all_of(quest_norm)) %>% 
-  mutate(n = n_miss_row(across(all_of(quest_norm)))) %>% 
-  relocate(id_anonymat, sc_type, n)
-
-
-
 # 2. REDOUBLEMENT ####
 M2_rdb_F0 <- read_sas("../raw_data/gb_ddb_sc_02_rdb_02.sas7bdat")
 
@@ -365,6 +144,7 @@ cols_rd <- M2_rdb_F0 %>%
   select(all_of(starts_with("rd_"))) %>% 
   colnames()
 
+# renommer les colonnes et transformer les "" characters en NAs
 M2_rdb_F1 <- M2_rdb_F0 %>%  
   rename_with(~ gsub("^fa_", "sc_", .x), all_of(cols_fa)) %>% 
   rename_with(~ gsub("^ps_", "sc_", .x), all_of(cols_ps)) %>%
@@ -502,7 +282,7 @@ rcd_chr <- function(df, borne, vars){
         {{vars}},
         ~ as.character(case_when(
           {{borne}} == 1 & is.na(.x) ~ "Non renseigné", # Concerné, mais pas répondu
-          {{borne}} == 0 | {{borne}} > 1 ~ "Non concerné",       # Pas concerné
+          {{borne}} == 0 | {{borne}} > 1 ~ "Non concerné e",       # Pas concerné
           is.na({{borne}}) ~ NA_character_,               # Pas participé
           TRUE ~ as.character(.x)                           # Réponse renseignée
         ))
@@ -510,6 +290,10 @@ rcd_chr <- function(df, borne, vars){
     )
 }
 
+# Appliquer les fonctions pour recoder les valeurs manquantes avant le pivot wide
+# La raison pour laquelle je le fais d'abord ici, c'est que c'est encore une ligne
+# par événement. Plus tard ce sera un autre code pour la base où c'est une ligne par 
+# personne.
 rdb_F2 <- rdb_F1 %>% 
   group_by(id_anonymat) %>% 
   rcd_year(sc_redoubl, an) %>% 
@@ -529,10 +313,15 @@ rdb_F3 <- rdb_F2 %>%
   relocate(id_anonymat, sc_rdb_nb, rang_sc_rdb, an, classe) %>% 
   ungroup()
 
+# Variables qui seront en plusieurs colonnes
 vars_wider <- rdb_F3 %>% 
   select(an, cause, classe, classe_autre, classe_cat) %>% 
   colnames()
 
+# Fonction pour recoder les variables qui seront wide. La raison pour laquelle
+# il faut des fonctions différentes c'est parce qu'il y a une nouvelle sorte de
+# NA. C'est dans le cas où une personne a connu un événement renouvelable, mais 
+# pas autant de fois que celui qui en a renseigné le plus. 
 rcd_yearsW <- function(df, borne, vars_year){
   df %>% 
     mutate(
@@ -569,7 +358,7 @@ rcd_chrsW <- function(df, borne, vars){
       across(
         {{vars}},
         ~ as.character(case_when(
-          {{borne}} == 1 & is.na(.x) ~ "444-Pas concerné", # Concerné, mais pas de répétition
+          {{borne}} == 1 & is.na(.x) ~ "444-Non concerné", # Concerné, mais pas de répétition
           {{borne}} == 0 | {{borne}} > 1 ~ "777-Non concerné",       # Pas concerné
           is.na({{borne}}) ~ NA_character_,               # Pas participé
           TRUE ~ as.character(.x)                           # Réponse renseignée
@@ -578,6 +367,7 @@ rcd_chrsW <- function(df, borne, vars){
     )
 }
 
+# On pivote ensuite en wide en appliquant les nouveaux noms de variables
 rdb_W1 <- rdb_F3 %>% 
   pivot_wider(
     names_from = rang_sc_rdb,
@@ -585,6 +375,8 @@ rdb_W1 <- rdb_F3 %>%
     names_glue = "{rang_sc_rdb}_{.value}"
   )
 
+# on extrait ensuite les différentes sortes de variables qui seront recodées à
+# l'aide des différentes fonctions
 vars_years <- rdb_W1 %>% 
   select(ends_with("_an")) %>% 
   colnames()
@@ -603,54 +395,6 @@ rdb_W2 <- rdb_W1 %>%
   rcd_varsW(sc_redoubl, all_of(vars_rcd)) %>% 
   rcd_chrsW(sc_redoubl, all_of(vars_chr))
   
-#JE SUIS RENDUE ICI
-## 2.2 Remove duplicates ####
-common_vars <- intersect(names(M2_rdb_F1), names(M2_F2))
-
-vars_doublons <- union("id_link", setdiff(names(M2_rdb_F1), common_vars))
-
-doublons <- M2_rdb_F1 %>% 
-  filter(is.na(id_date_creation))
-
-list_doublons <- unique(doublons$id_link)
-
-identity <- M2_F2 %>% 
-  filter(id_link %in% list_doublons) %>% 
-  select(all_of(common_vars))
-
-clean <- left_join(
-  doublons %>% 
-    select(all_of(vars_doublons)),
-  identity,
-  by = "id_link"
-)
-
-# J'ai bien vérifié que celui qui n'avait pas de doublons pouvait faire parti 
-# de la liste puisqu'il n'avait qu'une seule ligne pour le doublement. Je ne 
-# risque donc pas de retirer une autre ligne où il aurait eu ses données 
-# d'identité
-ids_TPO <- unique(identity$id_link)
-
-M2_rdb_F2 <- bind_rows(
-  M2_rdb_F1 %>% 
-    filter(!id_anonymat %in% ids_TPO),
-  clean
-) %>%
-  filter(sc_rdb_type == "P") %>% 
-  mutate(id_age_cat = case_when(
-    (is.na(id_age_cat) & id_age < 18) ~ "Adolescent",
-    (is.na(id_age_cat) & id_age > 17) ~ "Adulte",
-    TRUE ~ id_age_cat
-  ))
-M2_rdb_F2 %>%
-  miss_var_summary() %>%
-  gt()
-### Nettoyer l'environnement 
-rm(list = c("M2_rdb_F1",
-            "doublons",
-            "list_doublons",
-            "identity",
-            "vars_identity",
-            "vars_doublons",
-            "clean",
-            "ids_TPO"))
+# Maintenant, la base rdb_W2 est propre et bien recodée. Il faut la joindre 
+# au reste des données sur le parcours scolaire pour correctement renseigner 
+# valeurs manquantes.
