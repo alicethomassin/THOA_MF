@@ -24,6 +24,7 @@ make_id_link <- function(df){
       )
     ) 
 }
+
 M2_F0 <- read_sas("../raw_data/gb_ddb_id_01_sc_02.sas7bdat")
 
 ## 1.1 Renommer ####
@@ -263,17 +264,20 @@ vars_wider <- P2_rdb_F3 %>%
 
 ## 2.4 Recoder modalités (L) ####
 
-rcd_yearL <- function(df, borne, var_year){
+rcd_yearsL <- function(df, borne, vars){
   df %>% 
     mutate(
-      {{var_year}} := as.integer(case_when(
-        {{borne}} == 33 & is.na({{var_year}}) ~ 3333L, # Concerné, pas répondu au module
-        {{borne}} == 1 & is.na({{var_year}}) ~ 5555L,  # Concerné, mais pas répondu
-        ({{borne}} == 0 | {{borne}} > 1) & is.na({{var_year}})  ~ 7777L,        # Pas concerné
-        is.na({{borne}}) ~ NA_integer_,                # Pas participé
-        TRUE ~ as.integer({{var_year}})                # Réponse renseignée
+      across(
+        {{vars}},
+        ~ as.integer(case_when(
+          {{borne}} == 33 & is.na(.x) ~ 3333L,    # Concerné, pas répondu module
+          {{borne}} == 1 & is.na(.x) ~ 5555L,     # Concerné, mais pas plus de répétitions
+          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x)  ~ 7777L, 
+          is.na({{borne}}) ~ NA_integer_,         # Pas participé
+          TRUE ~ as.integer(.x)                   # Réponse renseignée
+        ))
       )
-      ))
+    )
 }
 
 rcd_varsL <- function(df, borne, vars){
@@ -316,7 +320,7 @@ rcd_chrsL <- function(df, borne, vars){
 # manquantes (444) parce que la personne n'a pas eu d'autre évents renouvelables
 P2_rdb_F4 <- P2_rdb_F3 %>% 
   group_by(id_anonymat) %>% 
-  rcd_yearL(sc_rdb_cor, an) %>% 
+  rcd_yearsL(sc_rdb_cor, an) %>% 
   rcd_varsL(sc_rdb_cor, c(cause, classe)) %>%
   rcd_chrsL(sc_rdb_cor, classe_cat) %>% 
   ungroup()
@@ -336,15 +340,15 @@ P2_rdb_W1 <- P2_rdb_F4 %>%
 # il faut des fonctions différentes c'est parce qu'il y a une nouvelle sorte de
 # NA = 444. C'est dans le cas où une personne a connu un événement renouvelable, mais 
 # pas autant de fois que celui qui en a renseigné le plus. 
-rcd_yearsW <- function(df, borne, vars_year){
+rcd_yearsW <- function(df, borne, vars){
   df %>% 
     mutate(
       across(
-        {{vars_year}},
+        {{vars}},
         ~ as.integer(case_when(
           {{borne}} == 33 & is.na(.x) ~ 3333L,    # Concerné, pas répondu module
           {{borne}} == 1 & is.na(.x) ~ 4444L,     # Concerné, mais pas plus de répétitions
-          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x)  ~ 7777L, # Pas concerné
+          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x)  ~ 7777L, # Pas concerné/Pas répondu à la question borne
           is.na({{borne}}) ~ NA_integer_,         # Pas participé
           TRUE ~ as.integer(.x)                   # Réponse renseignée
         ))
@@ -422,19 +426,86 @@ M2_F3 <- full_join(
   M2_F2,
   P2_rdb_W2,
   by = common_vars) %>% 
-  arrange(id_anonymat)
+  arrange(id_anonymat) %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+    sc_rdb_cor = case_when(
+      sc_redoubl == 0 ~ 0,
+      is.na(sc_rdb_cor) & !is.na(sc_type) ~ 55,
+      is.na(sc_rdb_cor) & is.na(sc_type) ~ NA_integer_,
+      TRUE ~ sc_rdb_cor
+    )
+  )
+
+M2_F3 %>% 
+  relocate(id_anonymat, sc_rdb_cor, sc_rdb_nb, all_of(starts_with("sc_rdb0"))) %>% 
+  View()
+
+
+Vars_years <- M2_F3 %>% 
+  ungroup() %>% 
+  select(starts_with("sc_rdb")) %>% 
+  select(ends_with("_an")) %>% 
+  colnames()
+
+Vars_rcd <- M2_F3 %>% 
+  ungroup() %>% 
+  select(ends_with("_classe"),
+         ends_with("_cause")) %>% 
+  select(starts_with("sc_rdb0")) %>% 
+  colnames()
+
+Vars_chr <- M2_F3 %>% 
+  ungroup() %>% 
+  select(ends_with("_classe_cat")) %>% 
+  select(starts_with("sc_rdb0")) %>% 
+  colnames()
+
+M2_F4 <- M2_F3 %>% 
+  rcd_yearsW(sc_rdb_cor, all_of(Vars_years)) %>%
+  mutate(sc_rdb_nb = case_when(
+    sc_rdb_cor == 0 ~ 0,
+    sc_rdb_cor == 55 ~ 555,
+    TRUE ~ sc_rdb_nb
+  )) %>%
+  rcd_varsW(sc_rdb_cor, all_of(Vars_rcd)) %>%
+  rcd_chrsW(sc_rdb_cor, all_of(Vars_chr)) %>% 
+  relocate(id_anonymat, sc_rdb_cor, sc_rdb_nb, all_of(Vars_years))
 
 
 
+M2_F4 %>% 
+  relocate(id_anonymat, sc_rdb_cor, sc_rdb_nb, all_of(starts_with("sc_rdb0"))) %>% 
+  View()
 
 
+common_vars <- intersect(names(M2_F2), names(P2_rdb_W1))
 
+MTEST <- full_join(
+  M2_F2,
+  P2_rdb_W1,
+  by = common_vars) %>% 
+  arrange(id_anonymat) %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+    sc_rdb_cor = case_when(
+      sc_redoubl == 0 ~ 0,
+      is.na(sc_rdb_cor) & !is.na(sc_type) ~ 55,
+      is.na(sc_rdb_cor) & is.na(sc_type) ~ NA_integer_,
+      TRUE ~ sc_rdb_cor
+    )
+  )
 
-
-
-
-
-
+MTEST_rcd <- MTEST %>% 
+  rcd_yearsW(sc_rdb_cor, all_of(Vars_years)) %>%
+  mutate(sc_rdb_nb = case_when(
+    sc_rdb_cor == 0 ~ 0,
+    sc_rdb_cor == 55 ~ 555,
+    TRUE ~ sc_rdb_nb
+  )) %>%
+  rcd_varsW(sc_rdb_cor, all_of(Vars_rcd)) %>%
+  rcd_chrsW(sc_rdb_cor, all_of(Vars_chr)) %>% 
+  relocate(id_anonymat, sc_rdb_cor, sc_rdb_nb, all_of(starts_with("sc_rdb0")))
 
 
 
