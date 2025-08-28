@@ -264,49 +264,46 @@ vars_wider <- P2_rdb_F3 %>%
 
 ## 2.4 Recoder modalités (L) ####
 
-rcd_yearsL <- function(df, borne, vars){
+rcd_yearsLM <- function(df, borne, vars){
   df %>% 
     mutate(
       across(
         {{vars}},
         ~ as.integer(case_when(
-          {{borne}} == 33 & is.na(.x) ~ 3333L,    # Concerné, pas répondu module
-          {{borne}} == 1 & is.na(.x) ~ 5555L,     # Concerné, mais pas plus de répétitions
-          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x)  ~ 7777L, 
-          is.na({{borne}}) ~ NA_integer_,         # Pas participé
-          TRUE ~ as.integer(.x)                   # Réponse renseignée
+          {{borne}} == 33 & is.na(.x) ~ 3333L,                   # Concerné, pas répondu module
+          {{borne}} == 1 & is.na(.x) ~ 5555L,                    # Concerné, mais pas répondu à la question
+          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x)  ~ 7777L, # Pas concerné
+          TRUE ~ as.integer(.x)                                  # Réponse renseignée
         ))
       )
     )
 }
 
-rcd_varsL <- function(df, borne, vars){
+rcd_varsLM <- function(df, borne, vars){
   df %>%
     mutate(
       across(
         {{vars}},
         ~ as.integer(case_when(
-          {{borne}} == 33 & is.na(.x) ~ 333L,      # Concerné, pas répondu au module
-          {{borne}} == 1 & is.na(.x) ~ 555L,       # Concerné, mais pas répondu
-          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x) ~ 777L,   # Pas concerné
-          is.na({{borne}}) ~ NA_integer_,          # Pas participé
-          TRUE ~ as.integer(.x)                    # Réponse renseignée
+          {{borne}} == 33 & is.na(.x) ~ 333L,                  # Concerné, pas répondu au module
+          {{borne}} == 1 & is.na(.x) ~ 555L,                   # Concerné, mais pas répondu
+          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x) ~ 777L, # Pas concerné
+          TRUE ~ as.integer(.x)                                # Réponse renseignée
         ))
       )
     )
 }
 
-rcd_chrsL <- function(df, borne, vars){
+rcd_chrsLM <- function(df, borne, vars){
   df %>%
     mutate(
       across(
         {{vars}},
         ~ as.character(case_when(
-          {{borne}} == 33 & is.na(.x) ~ "Non renseigné (333)",     # Concerné, pas répondu au module
-          {{borne}} == 1 & is.na(.x) ~ "Non renseigné (555)",      # Concerné, mais pas répondu
-          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x) ~ "Non concernée (777)",  # Pas concerné
-          is.na({{borne}}) ~ NA_character_,                      # Pas participé
-          TRUE ~ as.character(.x)                                # Réponse renseignée
+          {{borne}} == 33 & is.na(.x) ~ "Non renseigné (333)",                  # Concerné, pas répondu au module
+          {{borne}} == 1 & is.na(.x) ~ "Non renseigné (555)",                   # Concerné, mais pas répondu
+          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x) ~ "Non concernée (777)", # Pas concerné
+          TRUE ~ as.character(.x)                                               # Réponse renseignée
         ))
       )
     )
@@ -320,9 +317,9 @@ rcd_chrsL <- function(df, borne, vars){
 # manquantes (444) parce que la personne n'a pas eu d'autre évents renouvelables
 P2_rdb_F4 <- P2_rdb_F3 %>% 
   group_by(id_anonymat) %>% 
-  rcd_yearsL(sc_rdb_cor, an) %>% 
-  rcd_varsL(sc_rdb_cor, c(cause, classe)) %>%
-  rcd_chrsL(sc_rdb_cor, classe_cat) %>% 
+  rcd_yearsLM(sc_rdb_cor, an) %>% 
+  rcd_varsLM(sc_rdb_cor, c(cause, classe)) %>%
+  rcd_chrsLM(sc_rdb_cor, classe_cat) %>% 
   ungroup()
 
 ## 2.5 Pivot ####
@@ -339,7 +336,7 @@ P2_rdb_W1 <- P2_rdb_F4 %>%
 # il faut des fonctions différentes c'est parce qu'il y a une nouvelle sorte de
 # NA = 444. C'est dans le cas où une personne a connu un événement renouvelable, mais 
 # pas autant de fois que celui qui en a renseigné le plus. 
-rcd_yearsW <- function(df, borne, vars){
+rcd_yearsWM <- function(df, borne, vars){
   df %>% 
     mutate(
       across(
@@ -348,14 +345,14 @@ rcd_yearsW <- function(df, borne, vars){
           {{borne}} == 33 & is.na(.x) ~ 3333L,    # Concerné, pas répondu module
           {{borne}} == 1 & is.na(.x) ~ 4444L,     # Concerné, mais pas plus de répétitions
           ({{borne}} == 0 | {{borne}} > 1) & is.na(.x)  ~ 7777L, # Pas concerné/Pas répondu à la question borne
-          is.na({{borne}}) ~ NA_integer_,         # Pas participé
+          is.na({{borne}}) & is.na(.x) ~ NA_integer_,         # Pas participé
           TRUE ~ as.integer(.x)                   # Réponse renseignée
         ))
       )
     )
 }
 
-rcd_varsW <- function(df, borne, vars){
+rcd_varsWM <- function(df, borne, vars){
   df %>%
     mutate(
       across(
@@ -364,14 +361,14 @@ rcd_varsW <- function(df, borne, vars){
           {{borne}} == 33 & is.na(.x) ~ 333L,    # Concerné, pas répondu module
           {{borne}} == 1 & is.na(.x) ~ 444L,     # Concerné, mais pas répondu
           ({{borne}} == 0 | {{borne}} > 1) & is.na(.x) ~ 777L, # Pas concerné
-          is.na({{borne}}) ~ NA_integer_,        # Pas participé
+          is.na({{borne}}) & is.na(.x) ~ NA_integer_,        # Pas participé
           TRUE ~ as.integer(.x)                  # Réponse renseignée
         ))
       )
     )
 }
 
-rcd_chrsW <- function(df, borne, vars){
+rcd_chrsWM <- function(df, borne, vars){
   df %>%
     mutate(
       across(
@@ -380,7 +377,7 @@ rcd_chrsW <- function(df, borne, vars){
           {{borne}} == 33 & is.na(.x) ~ "Non renseigné (333)",    # Concerné, pas répondu au module
           {{borne}} == 1 & is.na(.x) ~ "Non concerné (444)",      # Concerné, mais pas de répétition
           ({{borne}} == 0 | {{borne}} > 1) & is.na(.x) ~ "Non concerné (777)",  # Pas concerné
-          is.na({{borne}}) ~ NA_character_,                     # Pas participé
+          is.na({{borne}}) & is.na(.x) ~ NA_character_,                     # Pas participé
           TRUE ~ as.character(.x)                               # Réponse renseignée
         ))
       )
@@ -430,18 +427,119 @@ Vars_chr <- M2_F3 %>%
 
 # Appliquer les fonctions
 M2_F4 <- M2_F3 %>% 
-  rcd_yearsW(sc_rdb_cor, all_of(Vars_years)) %>%
+  rcd_yearsWM(sc_rdb_cor, all_of(Vars_years)) %>%
   mutate(sc_rdb_nb = case_when(
     sc_rdb_cor == 0 ~ 0,
     sc_rdb_cor == 55 ~ 555,
     TRUE ~ sc_rdb_nb
   )) %>%
-  rcd_varsW(sc_rdb_cor, all_of(Vars_rcd)) %>%
-  rcd_chrsW(sc_rdb_cor, all_of(Vars_chr)) %>% 
-  relocate(id_anonymat, sc_rdb_cor, sc_rdb_nb, all_of(starts_with("sc_rdb0")))
+  rcd_varsWM(sc_rdb_cor, all_of(Vars_rcd)) %>%
+  rcd_chrsWM(sc_rdb_cor, all_of(Vars_chr)) %>% 
+  relocate(id_anonymat, sc_rdb_cor, sc_rdb_nb, sc_plan, sc_plan_an, sc_plan_demande, all_of(starts_with("sc_rdb0"))) %>% 
+  ungroup()
+
+# Clean up
+rm(list = c("common_vars",
+            "vars_wider"))
+
+# 3. Recoder SCOLARITÉ ####
+
+rcd_yearsN <- function(df, borne, vars){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ as.integer(case_when(
+          {{borne}} == 1 & is.na(.x) ~ 5555L,       # Concerné, mais pas répondu
+          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x)  ~ 7777L,  # Pas concerné ou pas répondu à la question borne
+          is.na({{borne}}) & is.na(.x) ~ NA_integer_,         # Pas participé
+          TRUE ~ as.integer(.x)                   # Réponse renseignée
+        ))
+      )
+    )
+}
+
+rcd_varsN <- function(df, borne, vars){
+  df %>%
+    mutate(
+      across(
+        {{vars}},
+        ~ as.integer(case_when(
+          {{borne}} == 1 & is.na(.x) ~ 555L,       # Concerné, mais pas répondu
+          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x) ~ 777L,   # Pas concerné ou pas répondu à la question borne
+          is.na({{borne}}) & is.na(.x) ~ NA_integer_,          # Pas participé
+          TRUE ~ as.integer(.x)                    # Réponse renseignée
+        ))
+      )
+    )
+}
+
+rcd_qcm <- function(df, borne, vars){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ as.integer(case_when(
+          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x) ~ 777L, # Pas concerné
+          !is.na({{borne}}) & all_na_vars ~ 555L,              # Pas répondu au QCM
+          {{borne}} == 1 & is.na(.x) ~ 0L,                     # Pas sélection dans qcm
+          is.na({{borne}}) & is.na(.x) ~ NA_integer_,          # Pas participé
+          TRUE ~ as.integer(.x)                                # Réponse renseignée
+        ))
+      )
+    ) %>% 
+    select(-all_na_vars)
+}
+
+rcd_type <- function(df, vars, type){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ as.integer(case_when(
+          is.na(.x) & !is.na({{type}}) ~ 555L,
+          TRUE ~ as.integer(.x)
+      ))
+      )
+    )
+}
 
 
-
-
+S18_ets <- M2_F4 %>% 
+  select(starts_with("sc_plan_ets"),
+         starts_with("sc_plan_no"),
+         -ends_with("_autre")) %>% 
+  colnames()
+  
+  
+M2_F5 <- M2_F4 %>% 
+  rcd_type(c(sc_plan, sc_fin_etudes, sc_diplome), sc_type) %>% 
+  rcd_qcm(sc_plan, all_of(S18_ets)) %>% 
+  rcd_yearsN(sc_plan, sc_plan_an) %>% 
+  mutate(
+    sc_plan_demande = case_when(
+      sc_plan > 0 & is.na(sc_plan_demande) ~ 777L,
+      sc_plan == 0 & is.na(sc_plan_demande) ~ 555L,
+      TRUE ~ sc_plan_demande
+    )
+  ) %>%
+  mutate(
+    sc_formation = case_when(
+      sc_fin_etudes > 0 & is.na(sc_formation) ~ 777L,
+      sc_fin_etudes == 0 & is.na(sc_formation) ~ 555L,
+      TRUE ~ sc_formation
+    )
+  ) %>% 
+  mutate(
+    sc_diplome_an = case_when(
+      sc_diplome == 1 ~ 7777L,
+      !is.na(sc_diplome) & is.na(sc_diplome_an) ~ 5555L,
+      TRUE ~ as.integer(sc_diplome_an)
+    )
+  ) %>% 
+  relocate(id_anonymat, sc_type, sc_plan, sc_plan_an, sc_plan_demande, sc_fin_etudes, sc_formation, sc_diplome, sc_diplome_an, all_of(S18_ets))
 
 
