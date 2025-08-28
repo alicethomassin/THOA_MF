@@ -334,8 +334,7 @@ P2_rdb_W1 <- P2_rdb_F4 %>%
     names_glue = "{rang_sc_rdb}_{.value}"
   )
 
-## 2.6 Recoder modalités (W) ####
-
+## 2.6 Fonctions pour recoder modalités (W) ####
 # Fonction pour recoder les variables qui seront wide. La raison pour laquelle
 # il faut des fonctions différentes c'est parce qu'il y a une nouvelle sorte de
 # NA = 444. C'est dans le cas où une personne a connu un événement renouvelable, mais 
@@ -388,43 +387,14 @@ rcd_chrsW <- function(df, borne, vars){
     )
 }
 
-# on extrait ensuite les différentes sortes de variables qui seront recodées à
-# l'aide des différentes fonctions
-vars_years <- P2_rdb_W1 %>% 
-  select(ends_with("_an"),
-         -contains("01")) %>% 
-  colnames()
+## 2.7 Joindre à la base scolarité ####
+# Extraire variables qui permettent la liaison
+common_vars <- intersect(names(M2_F2), names(P2_rdb_W1))
 
-vars_rcd <- P2_rdb_W1 %>% 
-  select(ends_with("_classe"),
-         ends_with("_cause"),
-         -contains("01")) %>% 
-  colnames()
-
-vars_chr <- P2_rdb_W1 %>% 
-  select(ends_with("classe_cat"),
-         -contains("01")) %>% 
-  colnames()
-
-P2_rdb_W2 <- P2_rdb_W1 %>% 
-  rcd_yearsW(sc_rdb_cor, all_of(vars_years)) %>% 
-  rcd_varsW(sc_rdb_cor, all_of(vars_rcd)) %>% 
-  rcd_chrsW(sc_rdb_cor, all_of(vars_chr))
-
-# Clean up
-rm(list = c("vars_chr",
-            "vars_rcd",
-            "vars_wider",
-            "vars_years"))
-###
-
-## 2.7 M2_F3 Joindre à la base scolarité ####
-
-common_vars <- intersect(names(M2_F2), names(P2_rdb_W2))
-
+# Joindre les deux bases et recoder la variable Borne (sc_rdb_cor)
 M2_F3 <- full_join(
   M2_F2,
-  P2_rdb_W2,
+  P2_rdb_W1,
   by = common_vars) %>% 
   arrange(id_anonymat) %>% 
   group_by(id_anonymat) %>% 
@@ -437,11 +407,8 @@ M2_F3 <- full_join(
     )
   )
 
-M2_F3 %>% 
-  relocate(id_anonymat, sc_rdb_cor, sc_rdb_nb, all_of(starts_with("sc_rdb0"))) %>% 
-  View()
-
-
+## 2.8 Recoder (W) ####
+# Distinguer les différentes sortes de variables
 Vars_years <- M2_F3 %>% 
   ungroup() %>% 
   select(starts_with("sc_rdb")) %>% 
@@ -461,6 +428,7 @@ Vars_chr <- M2_F3 %>%
   select(starts_with("sc_rdb0")) %>% 
   colnames()
 
+# Appliquer les fonctions
 M2_F4 <- M2_F3 %>% 
   rcd_yearsW(sc_rdb_cor, all_of(Vars_years)) %>%
   mutate(sc_rdb_nb = case_when(
@@ -470,42 +438,10 @@ M2_F4 <- M2_F3 %>%
   )) %>%
   rcd_varsW(sc_rdb_cor, all_of(Vars_rcd)) %>%
   rcd_chrsW(sc_rdb_cor, all_of(Vars_chr)) %>% 
-  relocate(id_anonymat, sc_rdb_cor, sc_rdb_nb, all_of(Vars_years))
-
-
-
-M2_F4 %>% 
-  relocate(id_anonymat, sc_rdb_cor, sc_rdb_nb, all_of(starts_with("sc_rdb0"))) %>% 
-  View()
-
-
-common_vars <- intersect(names(M2_F2), names(P2_rdb_W1))
-
-MTEST <- full_join(
-  M2_F2,
-  P2_rdb_W1,
-  by = common_vars) %>% 
-  arrange(id_anonymat) %>% 
-  group_by(id_anonymat) %>% 
-  mutate(
-    sc_rdb_cor = case_when(
-      sc_redoubl == 0 ~ 0,
-      is.na(sc_rdb_cor) & !is.na(sc_type) ~ 55,
-      is.na(sc_rdb_cor) & is.na(sc_type) ~ NA_integer_,
-      TRUE ~ sc_rdb_cor
-    )
-  )
-
-MTEST_rcd <- MTEST %>% 
-  rcd_yearsW(sc_rdb_cor, all_of(Vars_years)) %>%
-  mutate(sc_rdb_nb = case_when(
-    sc_rdb_cor == 0 ~ 0,
-    sc_rdb_cor == 55 ~ 555,
-    TRUE ~ sc_rdb_nb
-  )) %>%
-  rcd_varsW(sc_rdb_cor, all_of(Vars_rcd)) %>%
-  rcd_chrsW(sc_rdb_cor, all_of(Vars_chr)) %>% 
   relocate(id_anonymat, sc_rdb_cor, sc_rdb_nb, all_of(starts_with("sc_rdb0")))
+
+
+
 
 
 
