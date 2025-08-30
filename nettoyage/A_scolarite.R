@@ -238,7 +238,6 @@ rm(list = c("together",
             "cols_rd",
             "cols_rdb"))
 # NOUVEAU TESTE POUR TOUT RECODER EN MEME TEMPS LOL ####
-
 all_ids <- M2_F2 %>%
   select(id_anonymat, id_link, id_date_creation, sc_date_creation, sc_type, sc_id_cat, sc_redoubl)
 
@@ -422,9 +421,47 @@ M2_F3 <- left_join(
   by = common_vars
 )
 
+rcd_qcm <- function(df, borne, vars){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ as.integer(case_when(
+          ({{borne}}) == 333 & is.na(.x) ~ 333L,
+          ({{borne}}) == 1 & all_na_vars ~ 555L,
+          ({{borne}}) == 555 & all_na_vars ~ 777L,
+          ({{borne}} == 0 | {{borne}} > 1) & is.na(.x) ~ 777L, # Pas concerné
+          !is.na({{borne}}) & all_na_vars ~ 555L,              # Pas répondu au QCM
+          {{borne}} == 1 & is.na(.x) ~ 0L,                     # Pas sélection dans qcm
+          is.na({{borne}}) & is.na(.x) ~ NA_integer_,          # Pas participé
+          TRUE ~ as.integer(.x)                                # Réponse renseignée
+        ))
+      )
+    ) %>% 
+    select(-all_na_vars)
+}
+
+M2_F4 <- M2_F3 %>% 
+  group_by(id_anonymat) %>% 
+  mutate(
+    sc_plan = case_when(
+      !is.na(sc_type) & is.na(sc_plan) ~ 555,
+      TRUE ~ sc_plan
+    )
+  )
+
+
+
 #ICI####
 #REPRENDRE À PARTIR D'ICI POUR RECODER LES VARIABLES NORMALES DU QUESTIONNAIRE
 # SUR LA SCOLARITÉ. ENSUITE IL FAUT JOINDRE LES INTERRUPTIONS.
+
+# Je suis à l'aéroport et je ne crois pas avoir l'énergie de travailler. Donc
+# voici la marche à suivre que je me laisse. 
+# Je dois revoir la fonction pour recoder le QCM.
 
 #################
 
