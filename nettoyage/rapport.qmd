@@ -1,6 +1,15 @@
 ---
-title: "rapport"
-format: pdf
+title: "Rapport"
+author: "Alice Thomassin - 12113182"
+toc: true
+toc-depth: 2
+toc-title: "Table des matières"
+format: docx
+mainfont: "Times New Roman"
+editor: visual
+number-sections: true
+bibliography: references.bib
+lang: fr
 ---
 
 Je dois recommencer à écrire pour reprendre le contrôle sur mon travail. Dans les dernières semaines, je n'ai pas avancé. Je me demande pourquoi. La journée où j'ai pris le train avec ma mère pour aller à Londres, j'avais l'intention d'avancer. J'ai fait quelques fonctions, mais je n'ai pas vraiment travaillé. J'ai pris beaucoup de temps dans les dernières semaines à me renseigner sur divers calculs statistiques. Je regardais des tutos sur youtube et je prenais des notes. Je me faisais un peu l'illusion d'avancer sans vraiment le faire.
@@ -24,3 +33,86 @@ J'ai modifié les fonctions pour que les variables soient en character plutôt q
 NOPE ÇA FONCTIONNE PAS parce que je ne peux plus ordonner mes variables. Elles doivent demeurer en valeurs numériques.
 
 Je crois avoir terminé le redoublement scolaire. Il me reste à voir la liaison avec la base générale. Ensuite je peux passer aux interruptions.
+
+Je dois faire le codebook une fois que la base est jointe avec ceux qui n'ont pas participé au module pour savoir la part de ceux non concernés et ceux qui n'ont juste pas répondu au module
+
+Okay alors, je ne vais pas modifier sc_redoubl ni sc_rdb_redoubl, mais je vais créer une nouvelle variable corrigé. l'enjeu c'est de préserver les 0 dans les modules généraux, mais de conservers le 1 de ceux qui n'ont pas répondu aux sous-modules. Comme ça je peux recoder les valeurs manquantes de ces personnes avec 555 et non juste de NAs.
+
+La nouvelle variable peut être sc_rdb_cor et les modalités seraient
+
+0: pas redoublé\
+1: redoublé et renseigné\
+33: redoublé mais pas renseigné\
+55: pas répondu\
+NA: pas participé
+
+Ordre à suivre pour grands modules
+
+1.  GM: renommer les variables
+
+2.  GM: Unir les doublons de manière locale
+
+3.  GM: Pause
+
+4.  PM: réduire les variables pour ne garder que celles du sous-module et quelques variables de liaison comme id_anonymat, id_date_creation et l'ajout de id_link
+
+5.  PM: Renommer les quelques variables avec lesquelles je vais travailler
+
+6.  PM: Corriger les doublons en modifiant que l'id_anonymat qui se situe dans la base M1_identity
+
+7.  PM: Réduire les variables pour n'avoir que celles du module
+
+8.  Unir les doublons, mais deux situations
+
+    1.  
+
+        1.  de manière locale au sein de la même base de données
+        2.  de manière exter
+
+# Présentation de la structure d'accueil
+
+Depuis en 1945, l'Institut national des études démographiques rassemble, produit et publie les savoirs pluridisciplinaires nécessaires à la diffusion des connaissances démographiques aussi bien destinées aux communautés scientifiques, qu'à la population générale ou à la vie politique. Le 9 juillet dernier, le directeur de l'Ined, François Clanché et deux directeurs de recherche, Anne Solaz et Laurent Toulemon, se sont rendus à l'Assemblée nationale à l'occasion d'une commission sur la baisse de la natalité en France. La présence de l'Ined va au-delà des frontières nationales et européennes. Mon tuteur de stage, Gil Bellis, a participé au 30e Congrès international de la population (IPC), la plus grande conférence scientifique internationale sur les questions et la recherche en matière de population [@ined2025]. Assuré à Brisbane en Australie, plus de 2000 chercheurs venus de 140 pays se sont regroupés pour partager et échanger sur les dernières avancées de leurs domaines d'expertise. Au programme, 26 thèmes allant du vieillissement de la population, à la méthodologie, passant par les crises environnementales et bien d'autres. Il me semble pertinent de commencer ce rapport de stage en Dans le cadre de ce rapport de stage, il me semble pertinent de
+
+# Place du ou de la stagiaire dans l'organigramme
+
+L'Ined est composé de 10 unités de recherche (UR), chacune supervisée par un.e ou deux responsabes. Une équipe est composée de chercheur.es titulaires et associé.es, de doctorant.es et de post-doctorant.es. Les chercheur.es peuvent faire parti de plus d'une équipe de recherche. À ce jour, l'unité « Histoire et population » est la plus petite et regroupe 6 chercheur.es alors que la plus grande, l'UR05 « Mortalité, santé, épidémiologie », en compte 17. Émilie Counil et Michel Guillot en sont les reponsables et c'est au sein de cette unité que j'ai effectué mon stage de 3 mois. La durée et la saison pendant laquelle se sont écoulés ces derniers mois ne m'ont pas permis de faire la connaissance de tous les membres, mais mon tuteur et sa conjointe, Sophie Bellis, avaient à coeur de me présenter à leurs collègues. J'ai été mise en contact avec une ancienne étudiante de l'IDUP, Lou Taillandier, ainsi qu'avec divers titulaires et associé.es.
+
+À l'Ined, les échanges entre collègues vont au-delà des cases de l'organigramme et tous . et Les échanges liés à mes missionsMalgré la taille de l'équipe, je n'ai travaillé qu'avec mon tuteur M. Bellis et Peter Brandon, un chercheur associé. M. Bellis Bien que l'équipe soit importante, Au cours des dernières années, M. Bellis s'est associé
+
+celLa plus petite unité compte 6 chercheur.esassigné.es à une unité de Mon stage s'est déroulé sous la tutelle de Gil Bellis, au sein de l'unité de recherche 05 « Mortalité, santé, épidémiologie ». M. Bellis est l'un des
+
+14
+
+12
+
+17
+
+12
+
+11
+
+14
+
+6
+
+8
+
+14
+
+# Description des missions de stage
+
+En France, 7000 maladies rares sont identifiées, ces dernières touchent 4,5% de la population [@dgos2025]. Dans 80% des cas, ces maladies sont d'origine génétique. En France, la plus répendue est la mucoviscidose. Elle est due à des mutations du gène CFTR, identifié en 1989. Depuis, elle est reconnue comme une Affection de longue durée (ALD) et permet une prise en charge à 100% par l'Assurance maladie. En 1992, l'association Vaincre la mucoviscidose a créé l'Observatoire national de la mucoviscidose, devenu en 2009 le Registre français de la mucoviscidose (RFM). Ce dispositif permet de suivre les évolutions de la population concernée et d'appuyer la recherche. La mise en place en 2002 du dépistage systématique, permet de diagnostiquer près de 200 enfants qui naissent par année. Il y a une forte disparité régionale due aux socles génétiques locaux. Ainsi, la Bretagne estime que la maladie concerne 1 enfant sur 3 000 contre 1 sur 7 à 8 000 en Languedoc-Roussillon [@inserm2017]. Chaque disagnostique est ajouté au RFM en plus des patient.es suivi.es au sein des Centres de ressources et de compétences de la mucoviscidose (CRCM). Ce registre compte plus de 6 000 individus. Aujourd'hui, l'espérance de vie se situe entre 40 et 50 ans alors qu'elle était de 7 ans dans les années 60. Malgré qu'il n'existe pas encore de traitement curatif, Ce gain est lié à la prise en charge précoce ainsi qu'
+
+ayant obtenu le diagnostique avant l'installation du dépistage. . En Sa prévalence est estimée à 12 pour 100 000 dans la population européenne [@bellis2023]. Une enquête, intitulée « Mucoviscidose, famille et société » (MucoFamille), a été réalisée par M. Bellis. Cette enquête, qui s’est déroulée d’avril 2017 à avril 2019, s’est adressée aux patients recensés par le Registre français de la mucoviscidose (MucoRegistre) afin de mesurer la nature et l’importance des interactions entre les parcours de santé et les parcours de vie des personnes atteintes de mucoviscidose. Le stage consiste à analyser de manière approfondie le module de « MucoRegistre » consacré à la qualité de vie des patients, notamment : l’état de santé perçu, le degré d’autonomie, les refus éventuels d’observance des traitements liés à la maladie, la nature des aides reçues, les caractéristiques des aidants.
+
+# Bilan critique
+
+## Difficultés rencontrées et solutions trouvées
+
+La plus importante difficulté rencontré a été
+
+## Points positifs / négatifs
+
+## Compétences mobilisées / acquises / à améliorer
+
+# Annexe facultative avec extrait de programmes, codes, résultats, documents produits (avec l'autorisation de l'organisme d'accueil)
