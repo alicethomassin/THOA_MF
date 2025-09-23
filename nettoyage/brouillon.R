@@ -36,6 +36,14 @@ dfSummary(M1_identity,
           valid.col    = FALSE,
           tmp.img.dir  = "/tmp") %>% view()
 
+dfSummary(M2_F5, 
+          plain.ascii  = FALSE, 
+          style        = "grid", 
+          graph.magnif = 0.82, 
+          varnumbers   = FALSE,
+          valid.col    = FALSE,
+          tmp.img.dir  = "/tmp") %>% view()
+
 
 # Sélectionner variables à mettre en integer
 vars_int <- M2_F2 %>% 
@@ -215,3 +223,43 @@ sc_empties <- M2_F2 %>%
   select(id_anonymat, sc_type, all_of(quest_norm)) %>% 
   mutate(n = n_miss_row(across(all_of(quest_norm)))) %>% 
   relocate(id_anonymat, sc_type, n)
+
+
+
+
+
+# 5. Qualité de vie ####
+M6_F0 <- read_sas("../raw_data/gb_ddb_id_01_qv_06_test.sas7bdat")
+
+## 3.1 Réduire et renommer #### 
+# Réduire aux colonnes qui ne concernent que ce module et créer id_link
+P6_F0 <- M6_F0 %>% 
+  make_id_link(.) %>% 
+  select(id_anonymat, id_link, id_date_creation,
+         setdiff(names(.), names(M2_F0)))
+
+## 5.1.2 Rename cols ####
+add_qv <- P6_F0 %>% 
+  select(all_of(starts_with("sa_")),
+         all_of(starts_with("sc_")),
+         all_of(starts_with("am_")),
+         ad_besoin,
+         ad_lien,
+         ad_type) %>% 
+  colnames()
+
+P6_F1 <- P6_F0 %>% 
+  rename_with(~ paste0("qv_", .x), all_of(add_qv)) %>%
+  rename("qv_commentaires" = "commentaires_qual",
+         "qv_ad_act01" = "VAR11",
+         "qv_ad_act02" = "VAR2",
+         "qv_ad_act03" = "VAR3",
+         "qv_ad_act04" = "VAR4",
+         "qv_ad_act05" = "VAR5",
+         "qv_ad_act06" = "VAR6",
+         "qv_ad_act07" = "VAR7",
+         "qv_ad_act08" = "VAR8",
+         "qv_ad_act09" = "VAR9",
+         "qv_ad_act10" = "VAR10",
+         "qv_ad_act999" = "ad_activites_999",
+         "qv_ad_act_autre" = "ad_activites_autre")
