@@ -206,3 +206,8 @@ M2_V4 <- M2_V3 %>%
     sc_id_cat,
     sc_type
   )
+
+data <- M2_V4
+
+save(data, file = "../clean_data/thoa_scolarite_etiquettes.RData", compress = F)
+load(file = "../clean_data/thoa_scolarite_etiquettes.RData")
