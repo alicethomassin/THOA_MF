@@ -7,7 +7,7 @@ M4_frt_F1 <- M4_frt_F0 %>%
     .cols = where(is.character),
     .fns = ~ na_if(., "")
   )) %>% 
-  remove_empty("cols") %>% 
+ # remove_empty("cols") %>% 
   select(-fratrie_pf_fratrie)
 
 ## 3.4.2 Rename cols ####
