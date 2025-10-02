@@ -1,3 +1,30 @@
+# Pour la manipulation des données
+library(tidyverse)
+library(questionr)
+library(summarytools)
+library(naniar)
+
+# 1. SCOLARITÉ ####
+# Fonction pour créer variable de lien pour les doublons
+make_id_link <- function(df){
+  df %>%
+    separate(id_sep,
+             into = c("rid", "id_link"),
+             sep = "_",
+             remove = FALSE,
+             fill = "right") %>% 
+    select(-rid) %>% 
+    mutate(
+      id_link = case_when(
+        is.na(id_date_creation) ~ id_anonymat,
+        is.na(id_link) ~ id_anonymat,
+        TRUE ~ id_link
+      )
+    ) 
+}
+# Importer la base
+M2_F0 <- read_sas("../raw_data/gb_ddb_id_01_sc_02.sas7bdat")
+
 # 4. LOGEMENT ####
 M5_F0 <- haven::read_sas("../raw_data/gb_ddb_id_01_lo_05.sas7bdat")
 
@@ -73,7 +100,7 @@ rm(list = c("clean",
             "vars_identity"))
 
 ## 4.3 Corriger valeurs manquantes ####
-
+### 4.3.1 Réordonner la base ####
 P5_F3 <- P5_F2 %>% 
   relocate(
     id_date_creation,
@@ -104,7 +131,7 @@ P5_F3 <- P5_F2 %>%
     lo_commentaires,
     lo_date_creation
   )
-
+### 4.3.2 Créer variables ####
 rcd_qcm2 <- function(df, borne, vars){
   df %>%
     mutate(
@@ -124,6 +151,33 @@ rcd_qcm2 <- function(df, borne, vars){
     select(-all_na_vars)
 }
 
+rcd_vars <- function(df, vars, type){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ as.integer(case_when(
+          is.na(.x) & !is.na({{type}}) ~ 555L,
+          TRUE ~ as.integer(.x)
+        ))
+      )
+    )
+}
+
+rcd_years <- function(df, vars, type){
+  df %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ as.integer(case_when(
+          is.na(.x) & !is.na({{type}}) ~ 5555L,
+          TRUE ~ as.integer(.x)
+        ))
+      )
+    )
+}
+
+### 4.3.3 Sélectionner variables des QCM ####
 vars_Q5 <- P5_F3 %>% 
   select(lo_occup_cause_1:lo_occup_cause_999) %>% 
   colnames()
@@ -132,6 +186,11 @@ vars_Q8 <- P5_F3 %>%
   select(lo_emprunt_1:lo_emprunt_6) %>% 
   colnames()
 
+vars_Q11 <- P5_F3 %>% 
+  select(lo_demenag_cause_1:lo_demenag_cause_999) %>% 
+  colnames()
+
+### 4.3.4 Recoder ####
 P5_F4 <- P5_F3 %>% 
   group_by(id_anonymat) %>% 
   rcd_vars(lo_situ_logement, lo_type) %>%
@@ -146,146 +205,55 @@ P5_F4 <- P5_F3 %>%
   ) %>% 
   rcd_vars(c(lo_type_logement, lo_occup_logement), lo_type) %>% 
   rcd_qcm2(lo_type, all_of(vars_Q5)) %>% 
-  rcd_qcm2(lo_type, all_of(vars_Q8))
-
-P5_F3 %>% 
-  dfSummary() %>% 
-  view()
-
-P5_F4 %>% 
+  rcd_qcm2(lo_type, all_of(vars_Q8)) %>% 
+  rcd_vars(c(lo_amenag_logement, lo_demenag), lo_type) %>% 
+  rcd_qcm2(lo_type, all_of(vars_Q11)) %>% 
   ungroup() %>% 
-  dfSummary() %>% 
-  view()
-
-test_miss <- P5_F3 %>% 
-  filter(!is.na(lo_type)) %>%
-  select(id_anonymat, lo_an_logement:lo_commentaires) %>% 
-  miss_case_summary() %>% 
-  arrange(case)
-
-vars_chr <- P5_F3 %>% 
-  select(starts_with("lo_"), -where(is.character), -where(is.double)) %>% 
-  colnames()
-
-test_enc <- P5_F3 %>% 
   mutate(
-    nb_miss = rowSums(is.na(select(., all_of(vars_chr))))) %>% 
-  relocate(nb_miss)
-
-test_enc2 <- P5_F3 %>%
-  mutate(
-    nb_miss = if (length(vars_chr) == 0) {
-      0
-    } else {
-      rowSums(is.na(select(., all_of(vars_chr))))
-    }
-  ) %>%
-  relocate(nb_miss)
-
-test_enc3 <- P5_F3 %>%
-  rowwise() %>%
-  mutate(nb_miss = sum(is.na(c_across(all_of(vars_chr))))) %>%
-  ungroup() %>%
-  relocate(nb_miss)
-
-tst2 <- P5_F3 %>%
-  rowwise() %>% 
-  mutate(
-    nb_ok = count(complete.cases(c_across(all_of(vars_chr))))
+    lo_dep_centre1 = as.integer(lo_dep_centre1),
+    lo_situ_pays = as.integer(lo_situ_pays)
   )
 
-tst2 <- rowSums(is.na(P5_F3) | P5_F3 == "")
-
-P5_F4 <- P5_F3 %>% 
-  rowwise() %>% 
-  rcd_years(lo_an_logement, lo_type) %>% 
-  rcd_vars(lo_situ_logement, lo_type) %>%
-  mutate(
-    lo_situ_pays_cor = case_when(
-      is.na(lo_type) ~ NA_integer_,
-      is.na(lo_situ_pays) & is.na(lo_situ_dep) ~ 555L,
-      !is.na(lo_situ_dep) ~ 1,
-      TRUE ~ lo_situ_pays
-      )
-    ) %>% 
-  mutate(lo_dep_situ_centre1 = case_when(
-    lo_situ_dep == lo_dep_centre1 ~ "Même département",
-    id_dep_nais == lo_dep_centre1 ~ "Département de naissance",
-    is.na(lo_dep_centre1) ~ "Pas déclaré de centre",
-    (lo_situ_dep != lo_dep_centre1 & id_dep_nais != lo_dep_centre1) ~ "Départements différents"
-  ))
-  
-
-  
-   mutate(
-    lo_traitement_geo = case_when(
-      is.na(lo_type) & lo_dep_centre1 == id_dep_nais ~ 22L,
-      lo_situ_dep == lo_dep_centre1 ~ 1L,
-      id_dep_nais == lo_dep_centre1 ~ 2L,
-      is.na(lo_dep_centre1) ~ 3L,
-      lo_situ_pays_cor < 555 & lo_situ_pays_cor > 1 & !is.na(lo_dep_centre1) ~ 4L
-    )
+## 4.4 Étiquettes ####
+P5_F5 <- P5_F4 %>% 
+  {
+    labels_Q5 <- set_names(rep("LO_05", length(vars_Q5)), vars_Q5)
+    set_variable_labels(., !!!labels_Q5)
+  } %>%
+  {
+    labels_Q8 <- set_names(rep("LO_08", length(vars_Q8)), vars_Q8)
+    set_variable_labels(., !!!labels_Q8)
+  } %>%
+  {
+    labels_Q11 <- set_names(rep("LO_11", length(vars_Q11)), vars_Q11)
+    set_variable_labels(., !!!labels_Q11)
+  } %>%
+  set_variable_labels(
+    id_date_creation = "id_A",
+    id_anonymat = "id_B",
+    id_link = "id_C",
+    id_lieu_nais = "ID_06",
+    id_dep_nais = "ID_06",
+    lo_an_logement = "LO_01",
+    lo_situ_logement = "LO_02",
+    lo_situ_dep = "LO_02",
+    lo_situ_pays = "LO_02",
+    lo_dep_centre1 = "lo_A",
+    lo_dep_situ_centre1 = "lo_B",
+    lo_type_logement = "LO_03",
+    lo_type_logement_autre = "lo_03",
+    lo_occup_logement = "LO_04",
+    lo_occup_logement_autre = "lo_04",
+    lo_occup_cause_autre = "lo_05",
+    lo_amenag_logement = "LO_06",
+    lo_amenag_logement_precis = "LO_07",
+    lo_emprunt_precis = "LO_09",
+    lo_demenag = "LO_10",
+    lo_demenag_cause_autre = "lo_11",
+    lo_date_creation = "lo_C",
+    id_lo_cat = "lo_D"
   )
 
-# Je laisse tomber les 
-
-  mutate(
-    lo_situ_geo = case_when(
-      lo_situ_dep == lo_dep_centre1 ~ 1L,
-      lo_situ_dep == id_dep_nais  ~ 2L,
-      is.na(lo_type) ~ NA_integer_,
-      TRUE ~ 555L
-    )
-  ) %>%
-  relocate(., any_of(c("lo_dep_centre1_cor", "lo_situ_geo")), .after = lo_dep_centre1)
-
-P5_F4 %>% 
-  select(lo_type, lo_situ_pays_cor, id_lieu_nais, lo_situ_dep, id_dep_nais, id_centre1, lo_dep_centre1, lo_dep_situ_centre1) %>% 
-  View()
-
-
-P5_F4 %>% 
-  select(lo_type, lo_situ_geo, lo_dep_centre1, lo_situ_dep, id_dep_nais, lo_situ_pays, id_lieu_nais) %>%
-  View()
-
-
-P5_F3 %>% 
-  dfSummary() %>% 
-  view()
-
-P5_F4 %>% 
-  dfSummary(
-    valid.col = F,
-    max.distinct.values = 5,
-    max.string.width = 20,
-    labels.col = T
-  ) %>% 
-  view()
-
-data %>% 
-  dfSummary(
-    valid.col = F,
-    max.distinct.values = 5,
-    max.string.width = 20,
-    labels.col = T,
-    split.cells = 20,
-    style = "multiline"
-  ) %>% 
-  view()
-
-st_options(
-  dfSummary.custom.1 = 
-    expression(
-      paste(
-        "Q1 - Q3 :",
-        round(
-          quantile(column_data, probs = .25, type = 2, 
-                   names = FALSE, na.rm = TRUE), digits = 1
-        ), " - ",
-        round(
-          quantile(column_data, probs = .75, type = 2, 
-                   names = FALSE, na.rm = TRUE), digits = 1
-        )
-      )
-    )
-)
+# Enregistrer ####
+THOA_logement <- P5_F5
+save(THOA_logement, file = "../clean_data/thoa_logement_etiquettes.RData", compress = F)
