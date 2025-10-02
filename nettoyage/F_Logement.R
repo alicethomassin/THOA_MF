@@ -105,12 +105,57 @@ P5_F3 <- P5_F2 %>%
     lo_date_creation
   )
 
+rcd_qcm2 <- function(df, borne, vars){
+  df %>%
+    mutate(
+      all_na_vars = if_all({{vars}}, is.na)
+    ) %>% 
+    mutate(
+      across(
+        {{vars}},
+        ~ as.integer(case_when(
+          is.na({{borne}}) ~ NA_integer_,
+          !is.na({{borne}}) & all_na_vars ~ 555L,
+          {{borne}} == "P" & is.na(.x) ~ 0L,
+          TRUE ~ as.integer(.x)                            
+        ))
+      )
+    ) %>% 
+    select(-all_na_vars)
+}
+
+vars_Q5 <- P5_F3 %>% 
+  select(lo_occup_cause_1:lo_occup_cause_999) %>% 
+  colnames()
+
+vars_Q8 <- P5_F3 %>% 
+  select(lo_emprunt_1:lo_emprunt_6) %>% 
+  colnames()
+
 P5_F4 <- P5_F3 %>% 
   group_by(id_anonymat) %>% 
   rcd_vars(lo_situ_logement, lo_type) %>%
   rcd_years(lo_an_logement, lo_type) %>% 
-  rcd_vars(lo_situ_dep, lo_type)
+  rcd_vars(lo_situ_dep, lo_type) %>% 
+  mutate(
+    lo_situ_pays = case_when(
+      (is.na(lo_situ_pays) & !is.na(lo_situ_logement)) ~ lo_situ_logement,
+      is.na(lo_type) ~ NA_integer_,
+      TRUE ~ lo_situ_pays
+    )
+  ) %>% 
+  rcd_vars(c(lo_type_logement, lo_occup_logement), lo_type) %>% 
+  rcd_qcm2(lo_type, all_of(vars_Q5)) %>% 
+  rcd_qcm2(lo_type, all_of(vars_Q8))
 
+P5_F3 %>% 
+  dfSummary() %>% 
+  view()
+
+P5_F4 %>% 
+  ungroup() %>% 
+  dfSummary() %>% 
+  view()
 
 test_miss <- P5_F3 %>% 
   filter(!is.na(lo_type)) %>%
